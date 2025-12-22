@@ -22,6 +22,7 @@ interface ContentItem {
   id: string;
   title: string;
   description: string | null;
+  url: string | null;
   content_type: 'video' | 'article' | 'pdf';
   class: string;
   language: 'hindi' | 'english';
@@ -65,6 +66,7 @@ export default function TeacherDashboard() {
   const [contentType, setContentType] = useState<'video' | 'article' | 'pdf'>('article');
   const [contentClass, setContentClass] = useState('8');
   const [contentLanguage, setContentLanguage] = useState<'hindi' | 'english'>('hindi');
+  const [contentUrl, setContentUrl] = useState('');
   const [submittingContent, setSubmittingContent] = useState(false);
 
   // Quiz form
@@ -183,6 +185,7 @@ export default function TeacherDashboard() {
       const { error } = await supabase.from('content').insert({
         title: contentTitle,
         description: contentDescription || null,
+        url: contentUrl || null,
         content_type: contentType,
         class: contentClass,
         language: contentLanguage,
@@ -292,6 +295,7 @@ export default function TeacherDashboard() {
   const resetContentForm = () => {
     setContentTitle('');
     setContentDescription('');
+    setContentUrl('');
     setContentType('article');
     setContentClass('8');
     setContentLanguage('hindi');
@@ -438,6 +442,16 @@ export default function TeacherDashboard() {
                             value={contentDescription}
                             onChange={(e) => setContentDescription(e.target.value)}
                             placeholder="Enter description"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="url">URL (optional)</Label>
+                          <Input
+                            id="url"
+                            type="url"
+                            value={contentUrl}
+                            onChange={(e) => setContentUrl(e.target.value)}
+                            placeholder="https://example.com/resource"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">

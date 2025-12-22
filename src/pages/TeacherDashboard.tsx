@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2 } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,6 +41,21 @@ interface QuizItem {
   created_at: string;
 }
 
+interface ProgressDetail {
+  content_id: string;
+  content_title: string;
+  completed: boolean;
+  completed_at: string | null;
+}
+
+interface QuizScoreDetail {
+  quiz_id: string;
+  quiz_question: string;
+  score: number;
+  total_questions: number;
+  attempted_at: string;
+}
+
 interface StudentProgress {
   id: string;
   email: string;
@@ -47,6 +64,8 @@ interface StudentProgress {
   completed_count: number;
   quiz_score: number;
   total_quizzes: number;
+  progressDetails: ProgressDetail[];
+  quizScoreDetails: QuizScoreDetail[];
 }
 
 export default function TeacherDashboard() {
@@ -57,6 +76,7 @@ export default function TeacherDashboard() {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
   const [students, setStudents] = useState<StudentProgress[]>([]);
+  const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   // Content form
@@ -138,23 +158,47 @@ export default function TeacherDashboard() {
       for (const profile of studentProfiles) {
         const { data: progressData } = await supabase
           .from('progress')
-          .select('completed')
-          .eq('user_id', profile.id)
-          .eq('completed', true);
+          .select('content_id, completed, completed_at')
+          .eq('user_id', profile.id);
 
         const { data: scoresData } = await supabase
           .from('quiz_scores')
-          .select('score')
+          .select('quiz_id, score, total_questions, attempted_at')
           .eq('user_id', profile.id);
+
+        // Map progress to content titles
+        const progressDetails: ProgressDetail[] = (progressData || []).map(p => {
+          const contentItem = contentData?.find(c => c.id === p.content_id);
+          return {
+            content_id: p.content_id,
+            content_title: contentItem?.title || 'Unknown Content',
+            completed: p.completed || false,
+            completed_at: p.completed_at,
+          };
+        });
+
+        // Map quiz scores to quiz questions
+        const quizScoreDetails: QuizScoreDetail[] = (scoresData || []).map(s => {
+          const quizItem = quizzesData?.find(q => q.id === s.quiz_id);
+          return {
+            quiz_id: s.quiz_id,
+            quiz_question: quizItem?.question || 'Unknown Quiz',
+            score: s.score,
+            total_questions: s.total_questions,
+            attempted_at: s.attempted_at,
+          };
+        });
 
         studentsWithProgress.push({
           id: profile.id,
           email: profile.email,
           full_name: profile.full_name,
           class: profile.class,
-          completed_count: progressData?.length || 0,
+          completed_count: progressDetails.filter(p => p.completed).length,
           quiz_score: scoresData?.reduce((acc, s) => acc + s.score, 0) || 0,
           total_quizzes: scoresData?.length || 0,
+          progressDetails,
+          quizScoreDetails,
         });
       }
 
@@ -312,6 +356,29 @@ export default function TeacherDashboard() {
   const handleLogout = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const toggleStudentExpanded = (studentId: string) => {
+    setExpandedStudents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId);
+      } else {
+        newSet.add(studentId);
+      }
+      return newSet;
+    });
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   if (authLoading || loading) {
@@ -719,7 +786,7 @@ export default function TeacherDashboard() {
               <CardHeader>
                 <CardTitle>Student Progress</CardTitle>
                 <CardDescription>
-                  Track student learning progress and quiz scores
+                  Track student learning progress and quiz scores. Click on a student to see detailed progress.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -728,38 +795,139 @@ export default function TeacherDashboard() {
                     No students registered yet.
                   </p>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Lessons Completed</TableHead>
-                        <TableHead>Quiz Score</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {students.map((student) => (
-                        <TableRow key={student.id}>
-                          <TableCell className="font-medium">
-                            {student.full_name || 'Unknown'}
-                          </TableCell>
-                          <TableCell>{student.email}</TableCell>
-                          <TableCell>Class {student.class || '-'}</TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">
-                              {student.completed_count} / {content.length}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={student.quiz_score > 0 ? 'default' : 'outline'}>
-                              {student.quiz_score} / {student.total_quizzes}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-4">
+                    {students.map((student) => {
+                      const isExpanded = expandedStudents.has(student.id);
+                      const progressPercent = content.length > 0 
+                        ? (student.completed_count / content.length) * 100 
+                        : 0;
+                      const quizPercent = student.total_quizzes > 0 
+                        ? (student.quiz_score / student.total_quizzes) * 100 
+                        : 0;
+                      
+                      return (
+                        <Collapsible key={student.id} open={isExpanded} onOpenChange={() => toggleStudentExpanded(student.id)}>
+                          <Card className="border">
+                            <CollapsibleTrigger className="w-full">
+                              <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-3 text-left">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                      <Users className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <div>
+                                      <CardTitle className="text-base">
+                                        {student.full_name || 'Unknown Student'}
+                                      </CardTitle>
+                                      <CardDescription className="text-sm">
+                                        {student.email} • Class {student.class || '-'}
+                                      </CardDescription>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-right hidden sm:block">
+                                      <Badge variant="secondary" className="mr-2">
+                                        {student.completed_count} / {content.length} lessons
+                                      </Badge>
+                                      <Badge variant={student.quiz_score > 0 ? 'default' : 'outline'}>
+                                        {student.quiz_score} / {student.total_quizzes} correct
+                                      </Badge>
+                                    </div>
+                                    {isExpanded ? (
+                                      <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                                    ) : (
+                                      <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                </div>
+                              </CardHeader>
+                            </CollapsibleTrigger>
+                            
+                            <CollapsibleContent>
+                              <CardContent className="pt-0 space-y-6">
+                                {/* Progress Overview */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-muted-foreground">Lessons Progress</span>
+                                      <span className="font-medium">{progressPercent.toFixed(0)}%</span>
+                                    </div>
+                                    <Progress value={progressPercent} className="h-2" />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between text-sm">
+                                      <span className="text-muted-foreground">Quiz Accuracy</span>
+                                      <span className="font-medium">{quizPercent.toFixed(0)}%</span>
+                                    </div>
+                                    <Progress value={quizPercent} className="h-2" />
+                                  </div>
+                                </div>
+
+                                {/* Completed Lessons */}
+                                <div>
+                                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                                    <BookOpen className="h-4 w-4 text-primary" />
+                                    Completed Lessons ({student.progressDetails.filter(p => p.completed).length})
+                                  </h4>
+                                  {student.progressDetails.filter(p => p.completed).length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No lessons completed yet.</p>
+                                  ) : (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                      {student.progressDetails.filter(p => p.completed).map((p) => (
+                                        <div key={p.content_id} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                                          <div className="flex items-center gap-2">
+                                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                            <span className="text-sm">{p.content_title}</span>
+                                          </div>
+                                          <span className="text-xs text-muted-foreground">
+                                            {formatDate(p.completed_at)}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Quiz Responses */}
+                                <div>
+                                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                                    <HelpCircle className="h-4 w-4 text-accent" />
+                                    Quiz Responses ({student.quizScoreDetails.length})
+                                  </h4>
+                                  {student.quizScoreDetails.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground">No quizzes attempted yet.</p>
+                                  ) : (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                                      {student.quizScoreDetails.map((q, index) => (
+                                        <div key={`${q.quiz_id}-${index}`} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            {q.score > 0 ? (
+                                              <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                                            ) : (
+                                              <XCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                                            )}
+                                            <span className="text-sm truncate">{q.quiz_question}</span>
+                                          </div>
+                                          <div className="flex items-center gap-2 flex-shrink-0">
+                                            <Badge variant={q.score > 0 ? 'default' : 'destructive'} className="text-xs">
+                                              {q.score > 0 ? 'Correct' : 'Incorrect'}
+                                            </Badge>
+                                            <span className="text-xs text-muted-foreground hidden sm:block">
+                                              {formatDate(q.attempted_at)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </CollapsibleContent>
+                          </Card>
+                        </Collapsible>
+                      );
+                    })}
+                  </div>
                 )}
               </CardContent>
             </Card>

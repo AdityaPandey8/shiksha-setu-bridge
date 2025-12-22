@@ -1,4 +1,4 @@
-import { Video, FileText, File, CheckCircle2, Circle } from 'lucide-react';
+import { Video, FileText, File, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ interface ContentCardProps {
   id: string;
   title: string;
   description?: string | null;
+  url?: string | null;
   contentType: 'video' | 'article' | 'pdf';
   language: 'hindi' | 'english';
   completed?: boolean;
@@ -30,6 +31,7 @@ export function ContentCard({
   id,
   title,
   description,
+  url,
   contentType,
   language,
   completed = false,
@@ -70,7 +72,20 @@ export function ContentCard({
           <CardDescription className="line-clamp-2">{description}</CardDescription>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        {url && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            asChild
+          >
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open Resource
+            </a>
+          </Button>
+        )}
         {onMarkComplete && (
           <Button
             variant={completed ? 'outline' : 'default'}

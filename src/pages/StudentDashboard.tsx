@@ -20,6 +20,7 @@ interface ContentItem {
   id: string;
   title: string;
   description: string | null;
+  url: string | null;
   content_type: 'video' | 'article' | 'pdf';
   class: string;
   language: 'hindi' | 'english';
@@ -390,6 +391,7 @@ export default function StudentDashboard() {
                     id={item.id}
                     title={item.title}
                     description={item.description}
+                    url={item.url}
                     contentType={item.content_type}
                     language={item.language}
                     completed={progress.some(p => p.content_id === item.id && p.completed)}

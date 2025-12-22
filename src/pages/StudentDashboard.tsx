@@ -152,9 +152,11 @@ export default function StudentDashboard() {
     for (const item of pending) {
       try {
         if (item.type === 'progress') {
-          await supabase.from('progress').upsert(item.data);
+          const progressData = item.data as { user_id: string; content_id: string; completed: boolean; completed_at: string };
+          await supabase.from('progress').upsert(progressData);
         } else if (item.type === 'quiz_score') {
-          await supabase.from('quiz_scores').insert(item.data);
+          const scoreData = item.data as { user_id: string; quiz_id: string; score: number; total_questions: number };
+          await supabase.from('quiz_scores').insert(scoreData);
         }
       } catch (error) {
         console.error('Error syncing:', error);

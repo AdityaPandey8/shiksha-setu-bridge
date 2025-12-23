@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 import { MissionBanner } from '@/components/MissionBanner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +20,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role: userRole, signIn, signUp, loading: authLoading } = useAuth();
+  const { t, language: preferredLanguage } = useLanguage();
 
   const initialRole = (searchParams.get('role') as Role) || 'student';
   const [role, setRole] = useState<Role>(initialRole);
@@ -31,7 +33,8 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [selectedClass, setSelectedClass] = useState('8');
-  const [language, setLanguage] = useState<'hindi' | 'english'>('hindi');
+  // Language is now read from global preference (useLanguage hook)
+  // Remove language selector from signup form
 
   // Redirect if already logged in
   useEffect(() => {
@@ -49,8 +52,8 @@ export default function Auth() {
     if (!email) {
       toast({
         variant: 'destructive',
-        title: 'Email Required',
-        description: 'Please enter your email address.',
+        title: t('error'),
+        description: t('enterEmail'),
       });
       return;
     }
@@ -64,12 +67,12 @@ export default function Auth() {
       if (error) {
         toast({
           variant: 'destructive',
-          title: 'Error',
+          title: t('error'),
           description: error.message,
         });
       } else {
         toast({
-          title: 'Reset Email Sent',
+          title: t('success'),
           description: 'Check your email for a password reset link.',
         });
         setIsForgotPassword(false);
@@ -77,7 +80,7 @@ export default function Auth() {
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: t('error'),
         description: 'An unexpected error occurred. Please try again.',
       });
     } finally {
@@ -95,40 +98,41 @@ export default function Auth() {
         if (error) {
           toast({
             variant: 'destructive',
-            title: 'Login Failed',
+            title: t('error'),
             description: error.message,
           });
         } else {
           toast({
-            title: 'Welcome back!',
+            title: t('welcomeBack') + '!',
             description: 'You have successfully logged in.',
           });
         }
       } else {
+        // Use global language preference for signup
         const { error } = await signUp(email, password, {
           full_name: fullName,
           role,
           class: role === 'student' ? selectedClass : undefined,
-          language,
+          language: preferredLanguage === 'hi' ? 'hindi' : 'english',
         });
 
         if (error) {
           if (error.message.includes('already registered')) {
             toast({
               variant: 'destructive',
-              title: 'Account Exists',
+              title: t('error'),
               description: 'This email is already registered. Please login instead.',
             });
           } else {
             toast({
               variant: 'destructive',
-              title: 'Signup Failed',
+              title: t('error'),
               description: error.message,
             });
           }
         } else {
           toast({
-            title: 'Account Created!',
+            title: t('success') + '!',
             description: 'Welcome to Shiksha Setu.',
           });
         }
@@ -136,7 +140,7 @@ export default function Auth() {
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Error',
+        title: t('error'),
         description: 'An unexpected error occurred. Please try again.',
       });
     } finally {
@@ -153,6 +157,9 @@ export default function Auth() {
       setPassword('demo123');
     }
   };
+
+  // Get translated role name
+  const getRoleName = (r: Role) => r === 'student' ? t('student') : t('teacher');
 
   if (authLoading) {
     return (
@@ -179,7 +186,7 @@ export default function Auth() {
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {isForgotPassword ? 'Back to Login' : 'Back to Home'}
+          {isForgotPassword ? t('backToLogin') : t('backToHome')}
         </Button>
 
         <div className="max-w-md mx-auto">
@@ -189,11 +196,11 @@ export default function Auth() {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="student" className="flex items-center gap-2">
                   <GraduationCap className="h-4 w-4" />
-                  Student
+                  {t('student')}
                 </TabsTrigger>
                 <TabsTrigger value="teacher" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Teacher
+                  {t('teacher')}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -212,28 +219,28 @@ export default function Auth() {
               </div>
               <CardTitle>
                 {isForgotPassword 
-                  ? 'Reset Password' 
+                  ? t('resetPassword') 
                   : isLogin 
-                    ? 'Welcome Back' 
-                    : 'Create Account'}
+                    ? t('welcomeBack') 
+                    : t('createAccount')}
               </CardTitle>
               <CardDescription>
                 {isForgotPassword
-                  ? 'Enter your email to receive a password reset link'
+                  ? t('enterEmailForReset')
                   : isLogin 
-                    ? `Login to your ${role} account` 
-                    : `Sign up as a ${role}`}
+                    ? t('loginToAccount', { role: getRoleName(role) })
+                    : t('signUpAs', { role: getRoleName(role) })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isForgotPassword ? (
                 <form onSubmit={handleForgotPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t('email')}</Label>
                     <Input
                       id="email"
                       type="email"
-                      placeholder="Enter your email"
+                      placeholder={t('enterEmail')}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
@@ -247,7 +254,7 @@ export default function Auth() {
                     disabled={loading}
                   >
                     {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    Send Reset Link
+                    {t('sendResetLink')}
                   </Button>
 
                   <div className="mt-4 text-center">
@@ -256,7 +263,7 @@ export default function Auth() {
                       onClick={() => setIsForgotPassword(false)}
                       className="text-sm"
                     >
-                      Back to Login
+                      {t('backToLogin')}
                     </Button>
                   </div>
                 </form>
@@ -265,11 +272,11 @@ export default function Auth() {
                   <form onSubmit={handleSubmit} className="space-y-4">
                     {!isLogin && (
                       <div className="space-y-2">
-                        <Label htmlFor="fullName">Full Name</Label>
+                        <Label htmlFor="fullName">{t('fullName')}</Label>
                         <Input
                           id="fullName"
                           type="text"
-                          placeholder="Enter your full name"
+                          placeholder={t('enterFullName')}
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           required={!isLogin}
@@ -278,11 +285,11 @@ export default function Auth() {
                     )}
 
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">{t('email')}</Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder={t('enterEmail')}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -291,7 +298,7 @@ export default function Auth() {
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="password">Password</Label>
+                        <Label htmlFor="password">{t('password')}</Label>
                         {isLogin && (
                           <Button
                             type="button"
@@ -299,14 +306,14 @@ export default function Auth() {
                             className="text-xs p-0 h-auto"
                             onClick={() => setIsForgotPassword(true)}
                           >
-                            Forgot Password?
+                            {t('forgotPassword')}
                           </Button>
                         )}
                       </div>
                       <Input
                         id="password"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={t('enterPassword')}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -314,37 +321,23 @@ export default function Auth() {
                       />
                     </div>
 
-                    {role === 'student' && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="class">Select Class</Label>
-                          <Select value={selectedClass} onValueChange={setSelectedClass}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select your class" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="6">Class 6</SelectItem>
-                              <SelectItem value="7">Class 7</SelectItem>
-                              <SelectItem value="8">Class 8</SelectItem>
-                              <SelectItem value="9">Class 9</SelectItem>
-                              <SelectItem value="10">Class 10</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="language">Preferred Language</Label>
-                          <Select value={language} onValueChange={(v) => setLanguage(v as 'hindi' | 'english')}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="hindi">हिंदी (Hindi)</SelectItem>
-                              <SelectItem value="english">English</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
+                    {/* Only show class selector for students, removed language selector */}
+                    {role === 'student' && !isLogin && (
+                      <div className="space-y-2">
+                        <Label htmlFor="class">{t('selectClass')}</Label>
+                        <Select value={selectedClass} onValueChange={setSelectedClass}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectClass')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="6">{t('class6')}</SelectItem>
+                            <SelectItem value="7">{t('class7')}</SelectItem>
+                            <SelectItem value="8">{t('class8')}</SelectItem>
+                            <SelectItem value="9">{t('class9')}</SelectItem>
+                            <SelectItem value="10">{t('class10')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
 
                     <Button 
@@ -354,7 +347,7 @@ export default function Auth() {
                       disabled={loading}
                     >
                       {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      {isLogin ? 'Login' : 'Create Account'}
+                      {isLogin ? t('login') : t('createAccount')}
                     </Button>
                   </form>
 
@@ -365,8 +358,8 @@ export default function Auth() {
                       className="text-sm"
                     >
                       {isLogin 
-                        ? "Don't have an account? Sign up" 
-                        : 'Already have an account? Login'}
+                        ? t('dontHaveAccount')
+                        : t('alreadyHaveAccount')}
                     </Button>
 
                     {isLogin && (
@@ -376,7 +369,7 @@ export default function Auth() {
                         onClick={fillDemoCredentials}
                         className="text-xs text-muted-foreground"
                       >
-                        Use Demo Credentials
+                        {t('useDemoCredentials')}
                       </Button>
                     )}
                   </div>

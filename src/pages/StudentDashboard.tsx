@@ -15,6 +15,7 @@ import { MissionBanner } from '@/components/MissionBanner';
 import { OfflineBanner, OnlineIndicator } from '@/components/OfflineBanner';
 import { ContentCard } from '@/components/ContentCard';
 import { QuizCard } from '@/components/QuizCard';
+import { CareerGuidance } from '@/components/CareerGuidance';
 
 interface ContentItem {
   id: string;
@@ -306,6 +307,9 @@ export default function StudentDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* Career Guidance Section - Offline First */}
+        <CareerGuidance />
+
         {/* Progress Overview */}
         <Card className="mb-6">
           <CardHeader className="pb-2">

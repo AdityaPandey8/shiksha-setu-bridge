@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OfflineBanner, OnlineIndicator } from '@/components/OfflineBanner';
@@ -51,6 +52,7 @@ export default function StudentDashboard() {
   const { toast } = useToast();
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const isOnline = useOnlineStatus();
+  const { t } = useLanguage();
   const {
     saveContent,
     getContent,
@@ -131,8 +133,8 @@ export default function StudentDashboard() {
         setQuizScores(getQuizScores());
 
         toast({
-          title: 'Offline Mode',
-          description: 'Loading cached content. Your progress will sync when online.',
+          title: t('offlineMode'),
+          description: t('loadingCachedContent'),
         });
       }
     } catch (error) {
@@ -145,7 +147,7 @@ export default function StudentDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [isOnline, user?.id, saveContent, saveQuizzes, saveProgress, saveQuizScores, getContent, getQuizzes, getProgress, getQuizScores, toast]);
+  }, [isOnline, user?.id, saveContent, saveQuizzes, saveProgress, saveQuizScores, getContent, getQuizzes, getProgress, getQuizScores, toast, t]);
 
   const syncPendingChanges = async () => {
     const pending = getPendingSync();
@@ -167,8 +169,8 @@ export default function StudentDashboard() {
 
     clearPendingSync();
     toast({
-      title: 'Synced!',
-      description: 'Your offline progress has been saved.',
+      title: t('synced'),
+      description: t('offlineProgressSaved'),
     });
   };
 
@@ -209,8 +211,8 @@ export default function StudentDashboard() {
         saveProgress([...progress.filter(p => p.content_id !== contentId), { content_id: contentId, completed: true }]);
 
         toast({
-          title: 'Progress Saved!',
-          description: isOnline ? 'Your progress has been recorded.' : 'Will sync when online.',
+          title: t('progressSaved'),
+          description: isOnline ? t('progressRecorded') : t('willSyncWhenOnline'),
         });
       } catch (error) {
         console.error('Error marking complete:', error);
@@ -289,9 +291,9 @@ export default function StudentDashboard() {
                 <BookOpen className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">Student Learning App</h1>
+                <h1 className="text-lg font-bold">{t('studentLearningApp')}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Welcome, {profile?.full_name || 'Student'}
+                  {t('welcome')}, {profile?.full_name || t('student')}
                 </p>
               </div>
             </div>
@@ -299,7 +301,7 @@ export default function StudentDashboard() {
               <OnlineIndicator />
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                {t('logout')}
               </Button>
             </div>
           </div>
@@ -316,17 +318,17 @@ export default function StudentDashboard() {
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
-                Your Progress
+                {t('yourProgress')}
               </CardTitle>
               <span className="text-sm font-medium">
-                {completedCount} / {totalContent} completed
+                {completedCount} / {totalContent} {t('completed')}
               </span>
             </div>
           </CardHeader>
           <CardContent>
             <Progress value={progressPercent} className="h-3" />
             <p className="text-sm text-muted-foreground mt-2">
-              {progressPercent.toFixed(0)}% complete
+              {progressPercent.toFixed(0)}% {t('complete')}
             </p>
           </CardContent>
         </Card>
@@ -337,29 +339,29 @@ export default function StudentDashboard() {
             <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Filters:</span>
+                <span className="text-sm font-medium">{t('filters')}:</span>
               </div>
               <Select value={classFilter} onValueChange={setClassFilter}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Class" />
+                  <SelectValue placeholder={t('class')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Classes</SelectItem>
-                  <SelectItem value="6">Class 6</SelectItem>
-                  <SelectItem value="7">Class 7</SelectItem>
-                  <SelectItem value="8">Class 8</SelectItem>
-                  <SelectItem value="9">Class 9</SelectItem>
-                  <SelectItem value="10">Class 10</SelectItem>
+                  <SelectItem value="all">{t('allClasses')}</SelectItem>
+                  <SelectItem value="6">{t('class6')}</SelectItem>
+                  <SelectItem value="7">{t('class7')}</SelectItem>
+                  <SelectItem value="8">{t('class8')}</SelectItem>
+                  <SelectItem value="9">{t('class9')}</SelectItem>
+                  <SelectItem value="10">{t('class10')}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={languageFilter} onValueChange={setLanguageFilter}>
                 <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Language" />
+                  <SelectValue placeholder={t('language')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Languages</SelectItem>
-                  <SelectItem value="hindi">Hindi</SelectItem>
-                  <SelectItem value="english">English</SelectItem>
+                  <SelectItem value="all">{t('allLanguages')}</SelectItem>
+                  <SelectItem value="hindi">{t('hindi')}</SelectItem>
+                  <SelectItem value="english">{t('english')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -371,11 +373,11 @@ export default function StudentDashboard() {
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="content" className="flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
-              Lessons ({filteredContent.length})
+              {t('lessons')} ({filteredContent.length})
             </TabsTrigger>
             <TabsTrigger value="quizzes" className="flex items-center gap-2">
               <HelpCircle className="h-4 w-4" />
-              Quizzes ({filteredQuizzes.length})
+              {t('quizzes')} ({filteredQuizzes.length})
             </TabsTrigger>
           </TabsList>
 
@@ -384,7 +386,7 @@ export default function StudentDashboard() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No content available for the selected filters.</p>
+                  <p className="text-muted-foreground">{t('noContentAvailable')}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -412,7 +414,7 @@ export default function StudentDashboard() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <HelpCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No quizzes available for the selected filters.</p>
+                  <p className="text-muted-foreground">{t('noQuizzesAvailable')}</p>
                 </CardContent>
               </Card>
             ) : (

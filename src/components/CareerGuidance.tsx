@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useLanguage } from '@/hooks/useLanguage';
 
 /**
  * CAREER GUIDANCE DATA STRUCTURE
@@ -14,6 +15,7 @@ const CAREER_DATA = {
   careerGuidance: [
     {
       stream: "Mathematics",
+      streamHi: "गणित",
       icon: "Calculator",
       exams: ["JEE (Joint Entrance Examination)", "NDA (National Defence Academy)", "CUET (Common University Entrance Test)", "Mathematical Olympiads", "ISI Entrance", "KVPY"],
       courses: ["B.Tech (Engineering)", "B.Sc Mathematics", "Data Science", "Statistics", "Actuarial Science", "B.Sc Physics"],
@@ -21,6 +23,7 @@ const CAREER_DATA = {
     },
     {
       stream: "Biology",
+      streamHi: "जीव विज्ञान",
       icon: "FlaskConical",
       exams: ["NEET (National Eligibility Entrance Test)", "CUET", "AIIMS Entrance", "JIPMER", "AFMC", "BHU Medical Entrance"],
       courses: ["MBBS (Medicine)", "BDS (Dental)", "Biotechnology", "B.Sc Nursing", "BAMS (Ayurveda)", "Pharmacy", "Veterinary Science"],
@@ -28,6 +31,7 @@ const CAREER_DATA = {
     },
     {
       stream: "Arts",
+      streamHi: "कला",
       icon: "Palette",
       exams: ["UPSC (Civil Services)", "CUET", "CLAT (Law)", "NIFT (Design)", "NID DAT", "Mass Communication Entrance"],
       courses: ["BA (Bachelor of Arts)", "LLB (Law)", "Journalism", "Psychology", "Fine Arts", "Political Science", "Sociology", "History"],
@@ -35,6 +39,7 @@ const CAREER_DATA = {
     },
     {
       stream: "Commerce",
+      streamHi: "वाणिज्य",
       icon: "TrendingUp",
       exams: ["CA Foundation", "CS Foundation", "CMA Foundation", "Banking Exams (IBPS/SBI)", "SSC CGL", "CAT (MBA Entrance)"],
       courses: ["B.Com (Bachelor of Commerce)", "BBA (Business Administration)", "MBA", "Finance", "Chartered Accountancy", "Economics", "Banking & Insurance"],
@@ -69,18 +74,6 @@ const initializeCareerData = () => {
   }
 };
 
-const getCareerData = () => {
-  try {
-    const stored = localStorage.getItem(CAREER_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored).careerGuidance;
-    }
-    return CAREER_DATA.careerGuidance;
-  } catch {
-    return CAREER_DATA.careerGuidance;
-  }
-};
-
 // Stream icon mapping
 const StreamIcon = ({ stream }: { stream: string }) => {
   const iconClass = "h-5 w-5";
@@ -102,6 +95,7 @@ export function CareerGuidance() {
   const [selectedStream, setSelectedStream] = useState<string | null>(null);
   const [careerData, setCareerData] = useState<typeof CAREER_DATA.careerGuidance>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { t, isHindi } = useLanguage();
 
   // Initialize career data in localStorage on component mount
   useEffect(() => {
@@ -119,6 +113,11 @@ export function CareerGuidance() {
 
   const selectedData = careerData.find(item => item.stream === selectedStream);
 
+  // Get stream name based on language
+  const getStreamName = (item: typeof CAREER_DATA.careerGuidance[0]) => {
+    return isHindi ? item.streamHi : item.stream;
+  };
+
   if (!isInitialized) {
     return null;
   }
@@ -133,17 +132,17 @@ export function CareerGuidance() {
             </div>
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                🎯 Career Guidance
+                🎯 {t('careerGuidance')}
               </CardTitle>
               <CardDescription>
-                Explore your future career paths – works offline
+                {t('exploreCareerPaths')}
               </CardDescription>
             </div>
           </div>
           {/* Offline Ready Badge */}
           <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 flex items-center gap-1.5">
             <Wifi className="h-3 w-3" />
-            <span className="text-xs font-medium">🟢 Offline Ready</span>
+            <span className="text-xs font-medium">🟢 {t('offlineReady')}</span>
           </Badge>
         </div>
       </CardHeader>
@@ -151,13 +150,13 @@ export function CareerGuidance() {
       <CardContent className="space-y-4">
         {/* Offline message */}
         <p className="text-sm text-muted-foreground bg-muted/50 rounded-lg p-3">
-          ✨ This career guidance works without internet. All data is stored locally on your device.
+          ✨ {t('offlineCareerMessage')}
         </p>
 
         {/* Stream Selection */}
         {!selectedStream ? (
           <div className="space-y-3">
-            <h3 className="font-medium text-sm text-muted-foreground">Select a stream to explore:</h3>
+            <h3 className="font-medium text-sm text-muted-foreground">{t('selectStream')}</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {careerData.map((item) => (
                 <Button
@@ -169,7 +168,7 @@ export function CareerGuidance() {
                   <div className="p-2 rounded-full bg-primary/10">
                     <StreamIcon stream={item.stream} />
                   </div>
-                  <span className="font-medium">{item.stream}</span>
+                  <span className="font-medium">{getStreamName(item)}</span>
                 </Button>
               ))}
             </div>
@@ -184,13 +183,15 @@ export function CareerGuidance() {
                 onClick={() => setSelectedStream(null)}
                 className="text-muted-foreground hover:text-foreground"
               >
-                ← Back to streams
+                {t('backToStreams')}
               </Button>
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-full bg-primary/10">
                   <StreamIcon stream={selectedStream} />
                 </div>
-                <span className="font-semibold">{selectedStream}</span>
+                <span className="font-semibold">
+                  {selectedData ? getStreamName(selectedData) : selectedStream}
+                </span>
               </div>
             </div>
 
@@ -200,24 +201,24 @@ export function CareerGuidance() {
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="exams" className="flex items-center gap-1.5 text-xs sm:text-sm">
                     <BookOpen className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">📘</span> Exams
+                    <span className="hidden sm:inline">📘</span> {t('competitiveExams')}
                   </TabsTrigger>
                   <TabsTrigger value="courses" className="flex items-center gap-1.5 text-xs sm:text-sm">
                     <GraduationCap className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">🎓</span> Courses
+                    <span className="hidden sm:inline">🎓</span> {t('courses')}
                   </TabsTrigger>
                   <TabsTrigger value="jobs" className="flex items-center gap-1.5 text-xs sm:text-sm">
                     <Briefcase className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">💼</span> Jobs
+                    <span className="hidden sm:inline">💼</span> {t('jobOpportunities')}
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="exams" className="mt-4">
                   <Card className="bg-muted/30">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">📘 Competitive Exams</CardTitle>
+                      <CardTitle className="text-base">📘 {t('competitiveExams')}</CardTitle>
                       <CardDescription>
-                        Popular entrance exams for {selectedStream} students
+                        {t('popularExams', { stream: getStreamName(selectedData) })}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -239,9 +240,9 @@ export function CareerGuidance() {
                 <TabsContent value="courses" className="mt-4">
                   <Card className="bg-muted/30">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">🎓 Courses</CardTitle>
+                      <CardTitle className="text-base">🎓 {t('courses')}</CardTitle>
                       <CardDescription>
-                        Higher education options after {selectedStream}
+                        {t('higherEducation', { stream: getStreamName(selectedData) })}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -263,9 +264,9 @@ export function CareerGuidance() {
                 <TabsContent value="jobs" className="mt-4">
                   <Card className="bg-muted/30">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base">💼 Job Opportunities</CardTitle>
+                      <CardTitle className="text-base">💼 {t('jobOpportunities')}</CardTitle>
                       <CardDescription>
-                        Career paths for {selectedStream} graduates
+                        {t('careerPaths', { stream: getStreamName(selectedData) })}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>

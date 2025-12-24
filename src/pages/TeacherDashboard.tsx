@@ -16,6 +16,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OnlineIndicator } from '@/components/OfflineBanner';
@@ -72,6 +73,7 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, signOut, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [content, setContent] = useState<ContentItem[]>([]);
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
@@ -239,8 +241,8 @@ export default function TeacherDashboard() {
       if (error) throw error;
 
       toast({
-        title: 'Content Added!',
-        description: 'The content has been added successfully.',
+        title: t('contentAdded'),
+        description: t('contentAddedDesc'),
       });
 
       setContentDialogOpen(false);
@@ -264,8 +266,8 @@ export default function TeacherDashboard() {
       if (error) throw error;
 
       toast({
-        title: 'Content Deleted',
-        description: 'The content has been removed.',
+        title: t('deleteContent'),
+        description: t('deleteContentConfirm'),
       });
 
       fetchData();
@@ -296,8 +298,8 @@ export default function TeacherDashboard() {
       if (error) throw error;
 
       toast({
-        title: 'Quiz Added!',
-        description: 'The quiz has been added successfully.',
+        title: t('quizAdded'),
+        description: t('quizAddedDesc'),
       });
 
       setQuizDialogOpen(false);
@@ -321,8 +323,8 @@ export default function TeacherDashboard() {
       if (error) throw error;
 
       toast({
-        title: 'Quiz Deleted',
-        description: 'The quiz has been removed.',
+        title: t('deleteQuiz'),
+        description: t('deleteQuizConfirm'),
       });
 
       fetchData();
@@ -402,9 +404,9 @@ export default function TeacherDashboard() {
                 <Users className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">Teacher Dashboard</h1>
+                <h1 className="text-lg font-bold">{t('teacherDashboard')}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Manage content, quizzes, and track student progress
+                  {t('manageContentQuizzesProgress')}
                 </p>
               </div>
             </div>
@@ -412,7 +414,7 @@ export default function TeacherDashboard() {
               <OnlineIndicator />
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                {t('logout')}
               </Button>
             </div>
           </div>
@@ -425,7 +427,7 @@ export default function TeacherDashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Content
+                {t('totalContent')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -438,7 +440,7 @@ export default function TeacherDashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Quizzes
+                {t('totalQuizzes')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -451,7 +453,7 @@ export default function TeacherDashboard() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Students
+                {t('totalStudents')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -466,9 +468,9 @@ export default function TeacherDashboard() {
         {/* Tabs */}
         <Tabs defaultValue="content" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 max-w-lg">
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="quizzes">Quizzes</TabsTrigger>
-            <TabsTrigger value="students">Students</TabsTrigger>
+            <TabsTrigger value="content">{t('content')}</TabsTrigger>
+            <TabsTrigger value="quizzes">{t('quizzes')}</TabsTrigger>
+            <TabsTrigger value="students">{t('students')}</TabsTrigger>
           </TabsList>
 
           {/* Content Tab */}
@@ -476,43 +478,43 @@ export default function TeacherDashboard() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Learning Content</CardTitle>
+                  <CardTitle>{t('learningContent')}</CardTitle>
                   <Dialog open={contentDialogOpen} onOpenChange={setContentDialogOpen}>
                     <DialogTrigger asChild>
                       <Button>
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Content
+                        {t('addContent')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Add New Content</DialogTitle>
+                        <DialogTitle>{t('addNewContent')}</DialogTitle>
                         <DialogDescription>
-                          Create learning material for students
+                          {t('createLearningMaterial')}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleAddContent} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="title">Title</Label>
+                          <Label htmlFor="title">{t('title')}</Label>
                           <Input
                             id="title"
                             value={contentTitle}
                             onChange={(e) => setContentTitle(e.target.value)}
-                            placeholder="Enter content title"
+                            placeholder={t('title')}
                             required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="description">Description (optional)</Label>
+                          <Label htmlFor="description">{t('description')}</Label>
                           <Textarea
                             id="description"
                             value={contentDescription}
                             onChange={(e) => setContentDescription(e.target.value)}
-                            placeholder="Enter description"
+                            placeholder={t('description')}
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="url">URL (optional)</Label>
+                          <Label htmlFor="url">{t('contentUrl')}</Label>
                           <Input
                             id="url"
                             type="url"
@@ -523,49 +525,49 @@ export default function TeacherDashboard() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Content Type</Label>
+                            <Label>{t('contentType')}</Label>
                             <Select value={contentType} onValueChange={(v) => setContentType(v as 'video' | 'article' | 'pdf')}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="video">Video</SelectItem>
-                                <SelectItem value="article">Article</SelectItem>
-                                <SelectItem value="pdf">PDF</SelectItem>
+                                <SelectItem value="video">{t('video')}</SelectItem>
+                                <SelectItem value="article">{t('article')}</SelectItem>
+                                <SelectItem value="pdf">{t('pdf')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label>Class</Label>
+                            <Label>{t('class')}</Label>
                             <Select value={contentClass} onValueChange={setContentClass}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="6">Class 6</SelectItem>
-                                <SelectItem value="7">Class 7</SelectItem>
-                                <SelectItem value="8">Class 8</SelectItem>
-                                <SelectItem value="9">Class 9</SelectItem>
-                                <SelectItem value="10">Class 10</SelectItem>
+                                <SelectItem value="6">{t('class6')}</SelectItem>
+                                <SelectItem value="7">{t('class7')}</SelectItem>
+                                <SelectItem value="8">{t('class8')}</SelectItem>
+                                <SelectItem value="9">{t('class9')}</SelectItem>
+                                <SelectItem value="10">{t('class10')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label>Language</Label>
+                          <Label>{t('language')}</Label>
                           <Select value={contentLanguage} onValueChange={(v) => setContentLanguage(v as 'hindi' | 'english')}>
                             <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="hindi">Hindi</SelectItem>
-                              <SelectItem value="english">English</SelectItem>
+                              <SelectItem value="hindi">{t('hindi')}</SelectItem>
+                              <SelectItem value="english">{t('english')}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <Button type="submit" className="w-full" disabled={submittingContent}>
                           {submittingContent && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                          Add Content
+                          {submittingContent ? t('adding') : t('addContent')}
                         </Button>
                       </form>
                     </DialogContent>
@@ -575,16 +577,16 @@ export default function TeacherDashboard() {
               <CardContent>
                 {content.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    No content added yet. Click "Add Content" to create your first lesson.
+                    {t('noContentDesc')}
                   </p>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Language</TableHead>
+                        <TableHead>{t('title')}</TableHead>
+                        <TableHead>{t('contentType')}</TableHead>
+                        <TableHead>{t('class')}</TableHead>
+                        <TableHead>{t('language')}</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -594,11 +596,11 @@ export default function TeacherDashboard() {
                           <TableCell className="font-medium">{item.title}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="capitalize">
-                              {item.content_type}
+                              {item.content_type === 'video' ? t('video') : item.content_type === 'article' ? t('article') : t('pdf')}
                             </Badge>
                           </TableCell>
-                          <TableCell>Class {item.class}</TableCell>
-                          <TableCell className="capitalize">{item.language}</TableCell>
+                          <TableCell>{t('class')} {item.class}</TableCell>
+                          <TableCell className="capitalize">{item.language === 'hindi' ? t('hindi') : t('english')}</TableCell>
                           <TableCell className="text-right">
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -608,15 +610,15 @@ export default function TeacherDashboard() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Content?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('deleteContent')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete "{item.title}". This action cannot be undone.
+                                    {t('deleteContentConfirm')}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                                   <AlertDialogAction onClick={() => handleDeleteContent(item.id)}>
-                                    Delete
+                                    {t('delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -636,34 +638,34 @@ export default function TeacherDashboard() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Quizzes</CardTitle>
+                  <CardTitle>{t('quizzes')}</CardTitle>
                   <Dialog open={quizDialogOpen} onOpenChange={setQuizDialogOpen}>
                     <DialogTrigger asChild>
                       <Button>
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Quiz
+                        {t('addQuiz')}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-lg">
                       <DialogHeader>
-                        <DialogTitle>Add New Quiz</DialogTitle>
+                        <DialogTitle>{t('addNewQuiz')}</DialogTitle>
                         <DialogDescription>
-                          Create a multiple choice question
+                          {t('createQuiz')}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleAddQuiz} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="question">Question</Label>
+                          <Label htmlFor="question">{t('question')}</Label>
                           <Textarea
                             id="question"
                             value={quizQuestion}
                             onChange={(e) => setQuizQuestion(e.target.value)}
-                            placeholder="Enter your question"
+                            placeholder={t('enterQuestion')}
                             required
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Options</Label>
+                          <Label>{t('options')}</Label>
                           {quizOptions.map((option, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <Input
@@ -673,7 +675,7 @@ export default function TeacherDashboard() {
                                   newOptions[index] = e.target.value;
                                   setQuizOptions(newOptions);
                                 }}
-                                placeholder={`Option ${index + 1}`}
+                                placeholder={`${t('options')} ${index + 1}`}
                                 required
                               />
                               <input
@@ -683,42 +685,42 @@ export default function TeacherDashboard() {
                                 onChange={() => setQuizCorrectAnswer(index)}
                                 className="h-4 w-4"
                               />
-                              <span className="text-xs text-muted-foreground">Correct</span>
+                              <span className="text-xs text-muted-foreground">{t('correct')}</span>
                             </div>
                           ))}
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Class</Label>
+                            <Label>{t('class')}</Label>
                             <Select value={quizClass} onValueChange={setQuizClass}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="6">Class 6</SelectItem>
-                                <SelectItem value="7">Class 7</SelectItem>
-                                <SelectItem value="8">Class 8</SelectItem>
-                                <SelectItem value="9">Class 9</SelectItem>
-                                <SelectItem value="10">Class 10</SelectItem>
+                                <SelectItem value="6">{t('class6')}</SelectItem>
+                                <SelectItem value="7">{t('class7')}</SelectItem>
+                                <SelectItem value="8">{t('class8')}</SelectItem>
+                                <SelectItem value="9">{t('class9')}</SelectItem>
+                                <SelectItem value="10">{t('class10')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                           <div className="space-y-2">
-                            <Label>Language</Label>
+                            <Label>{t('language')}</Label>
                             <Select value={quizLanguage} onValueChange={(v) => setQuizLanguage(v as 'hindi' | 'english')}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="hindi">Hindi</SelectItem>
-                                <SelectItem value="english">English</SelectItem>
+                                <SelectItem value="hindi">{t('hindi')}</SelectItem>
+                                <SelectItem value="english">{t('english')}</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
                         <Button type="submit" className="w-full" disabled={submittingQuiz}>
                           {submittingQuiz && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                          Add Quiz
+                          {submittingQuiz ? t('adding') : t('addQuiz')}
                         </Button>
                       </form>
                     </DialogContent>
@@ -728,15 +730,15 @@ export default function TeacherDashboard() {
               <CardContent>
                 {quizzes.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    No quizzes added yet. Click "Add Quiz" to create your first quiz.
+                    {t('noQuizzesDesc')}
                   </p>
                 ) : (
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Question</TableHead>
-                        <TableHead>Class</TableHead>
-                        <TableHead>Language</TableHead>
+                        <TableHead>{t('question')}</TableHead>
+                        <TableHead>{t('class')}</TableHead>
+                        <TableHead>{t('language')}</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -746,8 +748,8 @@ export default function TeacherDashboard() {
                           <TableCell className="font-medium max-w-xs truncate">
                             {quiz.question}
                           </TableCell>
-                          <TableCell>Class {quiz.class}</TableCell>
-                          <TableCell className="capitalize">{quiz.language}</TableCell>
+                          <TableCell>{t('class')} {quiz.class}</TableCell>
+                          <TableCell className="capitalize">{quiz.language === 'hindi' ? t('hindi') : t('english')}</TableCell>
                           <TableCell className="text-right">
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -757,15 +759,15 @@ export default function TeacherDashboard() {
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Quiz?</AlertDialogTitle>
+                                  <AlertDialogTitle>{t('deleteQuiz')}</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    This will permanently delete this quiz. This action cannot be undone.
+                                    {t('deleteQuizConfirm')}
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
                                   <AlertDialogAction onClick={() => handleDeleteQuiz(quiz.id)}>
-                                    Delete
+                                    {t('delete')}
                                   </AlertDialogAction>
                                 </AlertDialogFooter>
                               </AlertDialogContent>
@@ -784,15 +786,15 @@ export default function TeacherDashboard() {
           <TabsContent value="students">
             <Card>
               <CardHeader>
-                <CardTitle>Student Progress</CardTitle>
+                <CardTitle>{t('studentProgress')}</CardTitle>
                 <CardDescription>
-                  Track student learning progress and quiz scores. Click on a student to see detailed progress.
+                  {t('manageContentQuizzesProgress')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {students.length === 0 ? (
                   <p className="text-center text-muted-foreground py-8">
-                    No students registered yet.
+                    {t('noStudentsDesc')}
                   </p>
                 ) : (
                   <div className="space-y-4">
@@ -817,20 +819,20 @@ export default function TeacherDashboard() {
                                     </div>
                                     <div>
                                       <CardTitle className="text-base">
-                                        {student.full_name || 'Unknown Student'}
+                                        {student.full_name || t('student')}
                                       </CardTitle>
                                       <CardDescription className="text-sm">
-                                        {student.email} • Class {student.class || '-'}
+                                        {student.email} • {t('class')} {student.class || '-'}
                                       </CardDescription>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <div className="text-right hidden sm:block">
                                       <Badge variant="secondary" className="mr-2">
-                                        {student.completed_count} / {content.length} lessons
+                                        {student.completed_count} / {content.length} {t('lessons')}
                                       </Badge>
                                       <Badge variant={student.quiz_score > 0 ? 'default' : 'outline'}>
-                                        {student.quiz_score} / {student.total_quizzes} correct
+                                        {student.quiz_score} / {student.total_quizzes} {t('correct')}
                                       </Badge>
                                     </div>
                                     {isExpanded ? (
@@ -849,14 +851,14 @@ export default function TeacherDashboard() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                                   <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">Lessons Progress</span>
+                                      <span className="text-muted-foreground">{t('lessonsCompleted')}</span>
                                       <span className="font-medium">{progressPercent.toFixed(0)}%</span>
                                     </div>
                                     <Progress value={progressPercent} className="h-2" />
                                   </div>
                                   <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
-                                      <span className="text-muted-foreground">Quiz Accuracy</span>
+                                      <span className="text-muted-foreground">{t('quizAccuracy')}</span>
                                       <span className="font-medium">{quizPercent.toFixed(0)}%</span>
                                     </div>
                                     <Progress value={quizPercent} className="h-2" />
@@ -867,10 +869,10 @@ export default function TeacherDashboard() {
                                 <div>
                                   <h4 className="font-medium mb-3 flex items-center gap-2">
                                     <BookOpen className="h-4 w-4 text-primary" />
-                                    Completed Lessons ({student.progressDetails.filter(p => p.completed).length})
+                                    {t('completedLessons')} ({student.progressDetails.filter(p => p.completed).length})
                                   </h4>
                                   {student.progressDetails.filter(p => p.completed).length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">No lessons completed yet.</p>
+                                    <p className="text-sm text-muted-foreground">{t('noLessonsCompleted')}</p>
                                   ) : (
                                     <div className="space-y-2 max-h-48 overflow-y-auto">
                                       {student.progressDetails.filter(p => p.completed).map((p) => (
@@ -892,10 +894,10 @@ export default function TeacherDashboard() {
                                 <div>
                                   <h4 className="font-medium mb-3 flex items-center gap-2">
                                     <HelpCircle className="h-4 w-4 text-accent" />
-                                    Quiz Responses ({student.quizScoreDetails.length})
+                                    {t('quizResponses')} ({student.quizScoreDetails.length})
                                   </h4>
                                   {student.quizScoreDetails.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">No quizzes attempted yet.</p>
+                                    <p className="text-sm text-muted-foreground">{t('noQuizAttempts')}</p>
                                   ) : (
                                     <div className="space-y-2 max-h-48 overflow-y-auto">
                                       {student.quizScoreDetails.map((q, index) => (
@@ -910,7 +912,7 @@ export default function TeacherDashboard() {
                                           </div>
                                           <div className="flex items-center gap-2 flex-shrink-0">
                                             <Badge variant={q.score > 0 ? 'default' : 'destructive'} className="text-xs">
-                                              {q.score > 0 ? 'Correct' : 'Incorrect'}
+                                              {q.score > 0 ? t('correct') : t('incorrect')}
                                             </Badge>
                                             <span className="text-xs text-muted-foreground hidden sm:block">
                                               {formatDate(q.attempted_at)}

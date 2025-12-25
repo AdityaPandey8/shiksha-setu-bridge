@@ -20,6 +20,8 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { supabase } from '@/integrations/supabase/client';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OnlineIndicator } from '@/components/OfflineBanner';
+import { EbookManager } from '@/components/EbookManager';
+import { useEbookStorage } from '@/hooks/useEbookStorage';
 
 interface ContentItem {
   id: string;

@@ -17,6 +17,7 @@ import { OfflineBanner, OnlineIndicator } from '@/components/OfflineBanner';
 import { ContentCard } from '@/components/ContentCard';
 import { QuizCard } from '@/components/QuizCard';
 import { CareerGuidance } from '@/components/CareerGuidance';
+import { EbookViewer } from '@/components/EbookViewer';
 
 interface ContentItem {
   id: string;
@@ -309,6 +310,11 @@ export default function StudentDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* My E-Books Section - Offline First */}
+        <div className="mb-6">
+          <EbookViewer />
+        </div>
+
         {/* Career Guidance Section - Offline First */}
         <CareerGuidance />
 

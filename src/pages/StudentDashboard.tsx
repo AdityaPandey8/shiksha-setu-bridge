@@ -18,6 +18,7 @@ import { ContentCard } from '@/components/ContentCard';
 import { QuizCard } from '@/components/QuizCard';
 import { CareerGuidance } from '@/components/CareerGuidance';
 import { EbookViewer } from '@/components/EbookViewer';
+import { StudentLearningHub } from '@/components/StudentLearningHub';
 
 interface ContentItem {
   id: string;
@@ -310,6 +311,9 @@ export default function StudentDashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* Student Learning Hub - Quick Navigation Cards */}
+        <StudentLearningHub />
+
         {/* My E-Books Section - Offline First */}
         <div className="mb-6">
           <EbookViewer />

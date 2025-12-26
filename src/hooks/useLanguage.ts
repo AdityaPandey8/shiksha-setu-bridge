@@ -260,6 +260,18 @@ export const translations = {
     selectChapter: "Select Chapter (Optional)",
     noChapterLink: "No Link",
     relatedContent: "Related Content",
+
+    // Student Learning Hub
+    chooseLearningPath: "Choose Your Learning Path",
+    hubEbooks: "E-Books",
+    hubEbooksDesc: "Read chapters offline",
+    hubContent: "Learning Content",
+    hubContentDesc: "Videos, notes & PDFs",
+    hubQuizzes: "Quizzes",
+    hubQuizzesDesc: "Practice & self-evaluate",
+    hubCareer: "Career Guidance",
+    hubCareerDesc: "Explore future paths",
+    downloadFirst: "Download First",
   },
   hi: {
     // Home Page
@@ -501,6 +513,18 @@ export const translations = {
     selectChapter: "अध्याय चुनें (वैकल्पिक)",
     noChapterLink: "कोई लिंक नहीं",
     relatedContent: "संबंधित सामग्री",
+
+    // Student Learning Hub (Hindi)
+    chooseLearningPath: "अपना सीखने का मार्ग चुनें",
+    hubEbooks: "ई-पुस्तकें",
+    hubEbooksDesc: "अध्याय ऑफलाइन पढ़ें",
+    hubContent: "शिक्षण सामग्री",
+    hubContentDesc: "वीडियो, नोट्स और PDF",
+    hubQuizzes: "क्विज़",
+    hubQuizzesDesc: "अभ्यास और आत्म-मूल्यांकन",
+    hubCareer: "करियर मार्गदर्शन",
+    hubCareerDesc: "भविष्य के मार्ग जानें",
+    downloadFirst: "पहले डाउनलोड करें",
   }
 };
 

@@ -105,6 +105,7 @@ export const translations = {
     teacherDashboard: "Teacher Dashboard",
     manageContentQuizzesProgress: "Manage content, quizzes, and track student progress",
     totalContent: "Total Content",
+    totalEbooks: "Total E-Books",
     totalQuizzes: "Total Quizzes",
     totalStudents: "Total Students",
     content: "Content",
@@ -211,7 +212,6 @@ export const translations = {
     noEbooksDesc: "No E-Books have been added yet.",
     noEbooksAvailable: "No E-Books available.",
     saving: "Saving...",
-    totalEbooks: "Total E-Books",
 
     // Chapter Management
     chapters: "chapters",
@@ -346,6 +346,7 @@ export const translations = {
     teacherDashboard: "शिक्षक डैशबोर्ड",
     manageContentQuizzesProgress: "सामग्री, क्विज़ और छात्र प्रगति प्रबंधित करें",
     totalContent: "कुल सामग्री",
+    totalEbooks: "कुल ई-पुस्तकें",
     totalQuizzes: "कुल क्विज़",
     totalStudents: "कुल छात्र",
     content: "सामग्री",
@@ -452,7 +453,6 @@ export const translations = {
     noEbooksDesc: "अभी तक कोई ई-पुस्तक नहीं जोड़ी गई है।",
     noEbooksAvailable: "कोई ई-पुस्तक उपलब्ध नहीं है।",
     saving: "सहेज रहे हैं...",
-    totalEbooks: "कुल ई-पुस्तकें",
 
     // Chapter Management (Hindi)
     chapters: "अध्याय",

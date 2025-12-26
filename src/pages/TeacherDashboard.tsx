@@ -76,6 +76,7 @@ export default function TeacherDashboard() {
   const { toast } = useToast();
   const { user, role, signOut, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const { ebooks } = useEbookStorage();
 
   const [content, setContent] = useState<ContentItem[]>([]);
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
@@ -425,7 +426,7 @@ export default function TeacherDashboard() {
 
       <main className="container mx-auto px-4 py-6">
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -436,6 +437,19 @@ export default function TeacherDashboard() {
               <div className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-primary" />
                 <span className="text-2xl font-bold">{content.length}</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {t('totalEbooks')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-accent" />
+                <span className="text-2xl font-bold">{ebooks.length}</span>
               </div>
             </CardContent>
           </Card>
@@ -469,11 +483,17 @@ export default function TeacherDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="content" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-lg">
+          <TabsList className="grid w-full grid-cols-4 max-w-xl">
             <TabsTrigger value="content">{t('content')}</TabsTrigger>
+            <TabsTrigger value="ebooks">{t('ebooks')}</TabsTrigger>
             <TabsTrigger value="quizzes">{t('quizzes')}</TabsTrigger>
             <TabsTrigger value="students">{t('students')}</TabsTrigger>
           </TabsList>
+
+          {/* E-Books Tab */}
+          <TabsContent value="ebooks">
+            <EbookManager />
+          </TabsContent>
 
           {/* Content Tab */}
           <TabsContent value="content">

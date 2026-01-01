@@ -272,6 +272,33 @@ export const translations = {
     hubCareer: "Career Guidance",
     hubCareerDesc: "Explore future paths",
     downloadFirst: "Download First",
+
+    // Offline/Online Status
+    syncing: "Syncing...",
+    syncingData: "Syncing your data...",
+    onlineFull: "Online – Full Features",
+    offlineLimited: "Offline – Limited",
+    offlineBannerMessage: "Offline Mode – Your progress will sync when internet returns",
+    syncedSuccessfully: "Synced Successfully",
+
+    // Chatbot
+    offlineAssistant: "Offline Assistant (Limited)",
+    aiAssistant: "Shiksha AI Assistant",
+    typeQuestion: "Type your question...",
+
+    // Offline Utilities
+    bookmarks: "Bookmarks",
+    doubtNotes: "Doubt Notes",
+    flashcards: "Flashcards",
+    dailyTip: "Daily Tip",
+    addBookmark: "Add Bookmark",
+    removeBookmark: "Remove Bookmark",
+    addDoubt: "Add Doubt",
+    resolveDoubt: "Resolve Doubt",
+    addFlashcard: "Add Flashcard",
+    noBookmarks: "No bookmarks yet",
+    noDoubts: "No doubts saved",
+    noFlashcards: "No flashcards created",
   },
   hi: {
     // Home Page
@@ -525,6 +552,33 @@ export const translations = {
     hubCareer: "करियर मार्गदर्शन",
     hubCareerDesc: "भविष्य के मार्ग जानें",
     downloadFirst: "पहले डाउनलोड करें",
+
+    // Offline/Online Status (Hindi)
+    syncing: "सिंक हो रहा है...",
+    syncingData: "आपका डेटा सिंक हो रहा है...",
+    onlineFull: "ऑनलाइन – पूर्ण सुविधाएं",
+    offlineLimited: "ऑफलाइन – सीमित",
+    offlineBannerMessage: "ऑफलाइन मोड – इंटरनेट वापस आने पर प्रगति सिंक होगी",
+    syncedSuccessfully: "सफलतापूर्वक सिंक हो गया",
+
+    // Chatbot (Hindi)
+    offlineAssistant: "ऑफलाइन असिस्टेंट (सीमित)",
+    aiAssistant: "शिक्षा AI असिस्टेंट",
+    typeQuestion: "अपना प्रश्न लिखें...",
+
+    // Offline Utilities (Hindi)
+    bookmarks: "बुकमार्क",
+    doubtNotes: "संदेह नोट्स",
+    flashcards: "फ्लैशकार्ड",
+    dailyTip: "दैनिक सुझाव",
+    addBookmark: "बुकमार्क जोड़ें",
+    removeBookmark: "बुकमार्क हटाएं",
+    addDoubt: "संदेह जोड़ें",
+    resolveDoubt: "संदेह हल करें",
+    addFlashcard: "फ्लैशकार्ड जोड़ें",
+    noBookmarks: "अभी तक कोई बुकमार्क नहीं",
+    noDoubts: "कोई संदेह सहेजा नहीं गया",
+    noFlashcards: "कोई फ्लैशकार्ड नहीं बनाया गया",
   }
 };
 

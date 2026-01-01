@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { MissionBanner } from '@/components/MissionBanner';
-import { OfflineBanner, OnlineIndicator } from '@/components/OfflineBanner';
+import { OfflineModeBanner, ConnectionStatus } from '@/components/ConnectionStatus';
 import { StudentLearningHub } from '@/components/StudentLearningHub';
+import { OfflineChatbot } from '@/components/OfflineChatbot';
+import { OfflineUtilitiesPanel } from '@/components/OfflineUtilitiesPanel';
 
 /**
  * StudentDashboard - Clean Feature Selector
@@ -15,10 +17,11 @@ import { StudentLearningHub } from '@/components/StudentLearningHub';
  * All feature content (E-Books, Content, Quizzes, Career) 
  * lives on their dedicated pages - NOT here.
  * 
- * Benefits:
- * - Fast loading (no data fetching on dashboard)
- * - Clear UX (choose what you want to learn)
- * - Lightweight (no heavy components rendered)
+ * HYBRID OFFLINE-FIRST BEHAVIOR:
+ * - Shows real-time connectivity status (green/yellow indicator)
+ * - Auto-syncs data when coming back online
+ * - Provides offline utilities (bookmarks, notes, flashcards)
+ * - Includes offline chatbot for assistance
  */
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -47,7 +50,8 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <OfflineBanner />
+      {/* Offline/Syncing Banner */}
+      <OfflineModeBanner />
       <MissionBanner />
 
       {/* Header */}
@@ -66,7 +70,8 @@ export default function StudentDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <OnlineIndicator />
+              {/* Real-time Connectivity Status */}
+              <ConnectionStatus />
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 {t('logout')}
@@ -76,10 +81,17 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Main Content - ONLY the Learning Hub Navigation Cards */}
-      <main className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
+      {/* Main Content - Learning Hub Navigation Cards + Offline Utilities */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Daily Motivational Tip */}
+        <OfflineUtilitiesPanel />
+        
+        {/* Learning Path Selection Cards */}
         <StudentLearningHub />
       </main>
+
+      {/* Floating Offline Chatbot */}
+      <OfflineChatbot />
     </div>
   );
 }

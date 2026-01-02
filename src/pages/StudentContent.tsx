@@ -2,11 +2,13 @@
  * StudentContent Page
  * 
  * Dedicated page for viewing learning content (videos, PDFs, notes).
+ * Content is always accessible and reusable - no completion restrictions.
  * 
  * OFFLINE BEHAVIOR:
  * - Loads content from localStorage first (shiksha_setu_content)
  * - Silently syncs with backend when online
  * - Shows cached data without errors when offline
+ * - Content remains accessible after multiple views
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -34,23 +36,16 @@ interface ContentItem {
   language: 'hindi' | 'english';
 }
 
-interface ProgressItem {
-  content_id: string;
-  completed: boolean;
-}
-
 export default function StudentContent() {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const { toast } = useToast();
   const { user, profile, loading: authLoading } = useAuth();
   const isOnline = useOnlineStatus();
-  const { saveContent, getContent, saveProgress, getProgress, addPendingSync } = useOfflineStorage();
+  const { saveContent, getContent } = useOfflineStorage();
 
   const [content, setContent] = useState<ContentItem[]>([]);
-  const [progress, setProgress] = useState<ProgressItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [markingComplete, setMarkingComplete] = useState<string | null>(null);
 
   // Filters
   const [classFilter, setClassFilter] = useState<string>(profile?.class || 'all');
@@ -70,28 +65,18 @@ export default function StudentContent() {
     try {
       // OFFLINE-FIRST: Load from cache first
       const cachedContent = getContent();
-      const cachedProgress = getProgress();
 
       if (cachedContent.length > 0) {
         setContent(cachedContent);
-        setProgress(cachedProgress);
       }
 
       // If online, sync with backend
       if (isOnline) {
-        const [contentRes, progressRes] = await Promise.all([
-          supabase.from('content').select('*'),
-          supabase.from('progress').select('content_id, completed').eq('user_id', user?.id),
-        ]);
+        const contentRes = await supabase.from('content').select('*');
 
         if (contentRes.data) {
           setContent(contentRes.data as ContentItem[]);
           saveContent(contentRes.data);
-        }
-
-        if (progressRes.data) {
-          setProgress(progressRes.data);
-          saveProgress(progressRes.data);
         }
       } else if (cachedContent.length === 0) {
         toast({
@@ -103,51 +88,16 @@ export default function StudentContent() {
       console.error('Error fetching content:', error);
       // Fall back to cache on error
       setContent(getContent());
-      setProgress(getProgress());
     } finally {
       setLoading(false);
     }
-  }, [isOnline, user?.id, saveContent, getContent, saveProgress, getProgress, toast, t]);
+  }, [isOnline, saveContent, getContent, toast, t]);
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
   }, [user, fetchData]);
-
-  const handleMarkComplete = async (contentId: string) => {
-    setMarkingComplete(contentId);
-
-    const progressData = {
-      user_id: user?.id,
-      content_id: contentId,
-      completed: true,
-      completed_at: new Date().toISOString(),
-    };
-
-    // Optimistic update
-    setProgress(prev => [...prev.filter(p => p.content_id !== contentId), { content_id: contentId, completed: true }]);
-
-    try {
-      if (isOnline) {
-        await supabase.from('progress').upsert(progressData as any);
-      } else {
-        addPendingSync({ type: 'progress', data: progressData as Record<string, unknown> });
-      }
-
-      saveProgress([...progress.filter(p => p.content_id !== contentId), { content_id: contentId, completed: true }]);
-
-      toast({
-        title: t('progressSaved'),
-        description: isOnline ? t('progressRecorded') : t('willSyncWhenOnline'),
-      });
-    } catch (error) {
-      console.error('Error marking complete:', error);
-      addPendingSync({ type: 'progress', data: progressData as Record<string, unknown> });
-    } finally {
-      setMarkingComplete(null);
-    }
-  };
 
   // Filter content
   const filteredContent = content.filter(item => {
@@ -248,9 +198,6 @@ export default function StudentContent() {
                 url={item.url}
                 contentType={item.content_type}
                 language={item.language}
-                completed={progress.some(p => p.content_id === item.id && p.completed)}
-                onMarkComplete={handleMarkComplete}
-                loading={markingComplete === item.id}
               />
             ))}
           </div>

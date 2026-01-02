@@ -240,6 +240,7 @@ export default function StudentQuizzes() {
                 language={quiz.language}
                 onSubmit={handleQuizSubmit}
                 alreadyAttempted={quizScores.some(s => s.quiz_id === quiz.id)}
+                isOnline={isOnline}
               />
             ))}
           </div>

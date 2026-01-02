@@ -1,4 +1,11 @@
-import { Video, FileText, File, CheckCircle2, Circle, ExternalLink } from 'lucide-react';
+/**
+ * ContentCard Component
+ * 
+ * Displays learning content (videos, PDFs, articles) in a clean card format.
+ * Content is always accessible and reusable - no completion tracking.
+ */
+
+import { Video, FileText, File, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,9 +17,6 @@ interface ContentCardProps {
   url?: string | null;
   contentType: 'video' | 'article' | 'pdf';
   language: 'hindi' | 'english';
-  completed?: boolean;
-  onMarkComplete?: (id: string) => void;
-  loading?: boolean;
 }
 
 const contentTypeIcons = {
@@ -34,16 +38,11 @@ export function ContentCard({
   url,
   contentType,
   language,
-  completed = false,
-  onMarkComplete,
-  loading = false,
 }: ContentCardProps) {
   const Icon = contentTypeIcons[contentType];
 
   return (
-    <Card className={`transition-all duration-300 hover:shadow-soft ${
-      completed ? 'border-success/30 bg-success/5' : ''
-    }`}>
+    <Card className="transition-all duration-300 hover:shadow-soft">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
@@ -72,7 +71,7 @@ export function ContentCard({
           <CardDescription className="line-clamp-2">{description}</CardDescription>
         )}
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent>
         {url && (
           <Button
             variant="outline"
@@ -84,27 +83,6 @@ export function ContentCard({
               <ExternalLink className="h-4 w-4 mr-2" />
               Open Resource
             </a>
-          </Button>
-        )}
-        {onMarkComplete && (
-          <Button
-            variant={completed ? 'outline' : 'default'}
-            size="sm"
-            className="w-full"
-            onClick={() => onMarkComplete(id)}
-            disabled={loading || completed}
-          >
-            {completed ? (
-              <>
-                <CheckCircle2 className="h-4 w-4 mr-2 text-success" />
-                Completed
-              </>
-            ) : (
-              <>
-                <Circle className="h-4 w-4 mr-2" />
-                Mark as Complete
-              </>
-            )}
           </Button>
         )}
       </CardContent>

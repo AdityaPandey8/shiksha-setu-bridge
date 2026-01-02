@@ -8,13 +8,14 @@
  * - Evaluation happens instantly on client side
  * - No server round-trip needed for feedback
  * 
- * SYNC STATUS:
- * - Shows "Answered" when attempt is saved
- * - Shows "Pending Sync" when offline and awaiting sync
+ * RETRY FUNCTIONALITY:
+ * - After wrong answer, user can retry
+ * - Retry resets the card state
+ * - New attempt is tracked separately
  */
 
 import { useState } from 'react';
-import { CheckCircle2, XCircle, HelpCircle, Clock, Wifi, WifiOff } from 'lucide-react';
+import { CheckCircle2, XCircle, HelpCircle, Clock, Wifi, RotateCcw } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +30,9 @@ interface QuizCardProps {
   language: 'hindi' | 'english';
   onSubmit?: (quizId: string, selectedAnswer: number, isCorrect: boolean) => void;
   alreadyAttempted?: boolean;
-  isOnline?: boolean; // For showing sync status
+  isOnline?: boolean;
+  allowRetry?: boolean; // Enable retry for wrong answers
+  lastAttemptCorrect?: boolean; // Was the last attempt correct?
 }
 
 export function QuizCard({
@@ -41,10 +44,13 @@ export function QuizCard({
   onSubmit,
   alreadyAttempted = false,
   isOnline = true,
+  allowRetry = true,
+  lastAttemptCorrect,
 }: QuizCardProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(1);
 
   /**
    * INSTANT EVALUATION LOGIC:
@@ -66,16 +72,29 @@ export function QuizCard({
     }
   };
 
-  // Already attempted - show completed state
-  if (alreadyAttempted) {
+  /**
+   * RETRY LOGIC:
+   * - Resets card state for new attempt
+   * - Increments attempt counter
+   * - Only available for wrong answers
+   */
+  const handleRetry = () => {
+    setSelectedAnswer(null);
+    setSubmitted(false);
+    setIsCorrect(false);
+    setAttemptCount(prev => prev + 1);
+  };
+
+  // Already attempted and correct - show completed state
+  if (alreadyAttempted && lastAttemptCorrect !== false) {
     return (
-      <Card className="border-muted bg-muted/30">
+      <Card className="border-success/30 bg-success/5">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-success" />
               <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
-                ✓ Answered
+                ✓ Completed
               </Badge>
             </div>
             <Badge variant="outline" className="capitalize text-xs">
@@ -103,6 +122,11 @@ export function QuizCard({
               <HelpCircle className="h-4 w-4 text-primary" />
             </div>
             <Badge variant="outline">Quiz</Badge>
+            {attemptCount > 1 && (
+              <Badge variant="secondary" className="text-xs">
+                Attempt #{attemptCount}
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {/* Sync status indicator - shows after submission */}
@@ -156,9 +180,9 @@ export function QuizCard({
                   : 'border-border hover:border-primary/50 hover:bg-muted/50'
               }`}
             >
-              <RadioGroupItem value={index.toString()} id={`${id}-option-${index}`} />
+              <RadioGroupItem value={index.toString()} id={`${id}-${attemptCount}-option-${index}`} />
               <Label
-                htmlFor={`${id}-option-${index}`}
+                htmlFor={`${id}-${attemptCount}-option-${index}`}
                 className="flex-1 cursor-pointer font-medium"
               >
                 {option}
@@ -185,22 +209,37 @@ export function QuizCard({
             Submit Answer
           </Button>
         ) : (
-          /* Instant feedback message */
-          <div className={`p-4 rounded-lg text-center font-medium animate-in fade-in slide-in-from-bottom-2 duration-300 ${
-            isCorrect 
-              ? 'bg-success/10 text-success border border-success/20' 
-              : 'bg-destructive/10 text-destructive border border-destructive/20'
-          }`}>
-            {isCorrect ? (
-              <div className="space-y-1">
-                <p className="text-lg">✅ Correct Answer!</p>
-                <p className="text-sm opacity-80">Great job! You chose the right answer.</p>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="text-lg">❌ Wrong Answer</p>
-                <p className="text-sm opacity-80">Oops! That's not correct. The right answer is shown above.</p>
-              </div>
+          <div className="space-y-3">
+            {/* Instant feedback message */}
+            <div className={`p-4 rounded-lg text-center font-medium animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+              isCorrect 
+                ? 'bg-success/10 text-success border border-success/20' 
+                : 'bg-destructive/10 text-destructive border border-destructive/20'
+            }`}>
+              {isCorrect ? (
+                <div className="space-y-1">
+                  <p className="text-lg">✅ Correct Answer!</p>
+                  <p className="text-sm opacity-80">Great job! You chose the right answer.</p>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="text-lg">❌ Wrong Answer</p>
+                  <p className="text-sm opacity-80">Oops! The correct answer is highlighted above.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Retry button - only for wrong answers */}
+            {!isCorrect && allowRetry && (
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                className="w-full"
+                size="lg"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
             )}
           </div>
         )}

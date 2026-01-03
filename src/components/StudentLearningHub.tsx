@@ -14,7 +14,7 @@
  */
 
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FolderOpen, FileQuestion, GraduationCap, Circle } from 'lucide-react';
+import { BookOpen, FolderOpen, FileQuestion, GraduationCap, Circle, Bot } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/hooks/useLanguage';
 
@@ -24,6 +24,7 @@ const CACHE_KEYS = {
   content: 'shiksha_setu_content',
   quizzes: 'shiksha_setu_quizzes',
   career: 'shiksha_setu_career_data',
+  saarthi: 'shiksha_setu_saarthi', // Always available offline
 };
 
 interface LearningPathCard {
@@ -42,7 +43,9 @@ export function StudentLearningHub() {
   const { t } = useLanguage();
 
   // Check if data is cached for offline use
+  // Setu Saarthi is always considered available offline
   const isCached = (key: string): boolean => {
+    if (key === CACHE_KEYS.saarthi) return true; // Always works offline
     try {
       const data = localStorage.getItem(key);
       return data !== null && data !== '[]' && data !== '{}';
@@ -52,6 +55,16 @@ export function StudentLearningHub() {
   };
 
   const learningPaths: LearningPathCard[] = [
+    {
+      id: 'saarthi',
+      icon: <Bot className="h-8 w-8" />,
+      titleKey: 'hubSaarthi',
+      subtitleKey: 'hubSaarthiDesc',
+      route: '/student/setu-saarthi',
+      cacheKey: CACHE_KEYS.saarthi,
+      bgColor: 'bg-violet-500/10 dark:bg-violet-500/20',
+      iconColor: 'text-violet-600 dark:text-violet-400',
+    },
     {
       id: 'ebooks',
       icon: <BookOpen className="h-8 w-8" />,
@@ -120,6 +133,7 @@ export function StudentLearningHub() {
 
                 {/* Title */}
                 <h3 className="font-semibold text-sm md:text-base mb-1 line-clamp-1">
+                  {path.id === 'saarthi' && 'Setu Saarthi'}
                   {path.id === 'ebooks' && t('hubEbooks')}
                   {path.id === 'content' && t('hubContent')}
                   {path.id === 'quizzes' && t('hubQuizzes')}
@@ -128,6 +142,7 @@ export function StudentLearningHub() {
 
                 {/* Subtitle */}
                 <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 mb-2">
+                  {path.id === 'saarthi' && 'Ask doubts & get guidance'}
                   {path.id === 'ebooks' && t('hubEbooksDesc')}
                   {path.id === 'content' && t('hubContentDesc')}
                   {path.id === 'quizzes' && t('hubQuizzesDesc')}

@@ -81,6 +81,51 @@ serve(async (req) => {
 });
 
 /**
+ * Pre-trained FAQ Knowledge Base for Setu Saarthi
+ * Used as base knowledge for AI responses
+ */
+const FAQ_KNOWLEDGE = `
+BASE KNOWLEDGE (Use this to provide accurate, consistent answers):
+
+GENERAL LEARNING:
+- "What is this chapter about?" → Explain main ideas in simple words, relate to real life
+- "Explain in simple words" → Break into steps, use easy examples
+- "Why is topic important?" → Builds foundation, useful for exams and higher classes
+- "Give real-life example" → Connect topics to daily life experiences
+- "Summarize chapter" → Key ideas, terms, and concepts to remember
+
+STUDY & EXAM PREPARATION:
+- Study method: Read carefully → Understand examples → Revise key points → Practice questions
+- Better scores: Study regularly, revise daily, practice questions, understand don't memorize
+- Study time: 2-4 hours daily with proper breaks for school students
+- Revision: Start 2 weeks early, focus on important topics, solve previous papers
+- Exam fear: Prepare well, revise regularly, sleep well, deep breathing, stay positive
+
+QUIZ & PRACTICE:
+- Answers checked immediately after submission
+- Wrong answers mean concept needs more understanding - review explanation
+- Can retry quizzes to improve score
+- Score = (Correct answers ÷ Total questions) × 100
+
+CAREER GUIDANCE AFTER CLASS 10:
+- Mathematics: Engineering, IT, Data Science, Defence | Exams: JEE Main/Advanced, NDA
+- Biology: Doctor, Nurse, Researcher, Pharmacist | Exams: NEET, AIIMS
+- Commerce: CA, Business, Banking, Finance | Exams: CA Foundation, Banking exams
+- Arts: Civil Services, Law, Journalism, Teaching | Exams: UPSC, CLAT, UGC NET
+
+MOTIVATION & STUDY HABITS:
+- Feeling demotivated: Take breaks, set small goals, remember your "why", celebrate wins
+- Stay focused: Quiet place, phone away, Pomodoro technique (25 min study, 5 min break)
+- Time management: Make timetable, prioritize difficult subjects, include breaks
+
+APP NAVIGATION:
+- Offline mode: Downloaded content works without internet, progress syncs when online
+- E-books: Download from E-Books section when online for offline access
+- Quizzes: Go to Quizzes section, attempt questions, submit, view results, retry if needed
+- Setu Saarthi: Ask learning doubts, career questions, study tips
+`;
+
+/**
  * Build a context-aware system prompt for Setu Saarthi
  */
 function buildSystemPrompt(context?: {
@@ -116,6 +161,8 @@ YOUR CAPABILITIES:
    - Memory techniques
    - Exam preparation strategies
    - Motivation and confidence building
+
+${FAQ_KNOWLEDGE}
 
 RESTRICTIONS:
 - ONLY discuss learning, education, and career topics

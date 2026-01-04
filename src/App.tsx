@@ -10,6 +10,7 @@ import StudentEbooks from "./pages/StudentEbooks";
 import StudentContent from "./pages/StudentContent";
 import StudentQuizzes from "./pages/StudentQuizzes";
 import StudentCareer from "./pages/StudentCareer";
+import StudentStudyTools from "./pages/StudentStudyTools";
 import SetuSaarthi from "./pages/SetuSaarthi";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import NotFound from "./pages/NotFound";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/student/content" element={<StudentContent />} />
           <Route path="/student/quizzes" element={<StudentQuizzes />} />
           <Route path="/student/career" element={<StudentCareer />} />
+          <Route path="/student/study-tools" element={<StudentStudyTools />} />
           <Route path="/student/setu-saarthi" element={<SetuSaarthi />} />
           <Route path="/teacher" element={<TeacherDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

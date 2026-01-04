@@ -53,6 +53,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ebooks: {
+        Row: {
+          class: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          language: Database["public"]["Enums"]["content_language"]
+          offline_enabled: boolean
+          pdf_filename: string | null
+          pdf_url: string
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["content_language"]
+          offline_enabled?: boolean
+          pdf_filename?: string | null
+          pdf_url: string
+          subject: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          language?: Database["public"]["Enums"]["content_language"]
+          offline_enabled?: boolean
+          pdf_filename?: string | null
+          pdf_url?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           class: string | null

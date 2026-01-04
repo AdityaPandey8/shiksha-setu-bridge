@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OnlineIndicator } from '@/components/OfflineBanner';
 import { EbookManager } from '@/components/EbookManager';
+import { EbookPdfManager } from '@/components/EbookPdfManager';
 import { useEbookStorage } from '@/hooks/useEbookStorage';
 
 interface ContentItem {
@@ -491,7 +492,8 @@ export default function TeacherDashboard() {
           </TabsList>
 
           {/* E-Books Tab */}
-          <TabsContent value="ebooks">
+          <TabsContent value="ebooks" className="space-y-6">
+            <EbookPdfManager />
             <EbookManager />
           </TabsContent>
 

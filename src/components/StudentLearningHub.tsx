@@ -77,16 +77,6 @@ export function StudentLearningHub() {
       iconColor: 'text-indigo-600 dark:text-indigo-400',
     },
     {
-      id: 'saarthi',
-      icon: <Bot className="h-8 w-8" />,
-      titleKey: 'hubSaarthi',
-      subtitleKey: 'hubSaarthiDesc',
-      route: '/student/setu-saarthi',
-      cacheKey: CACHE_KEYS.saarthi,
-      bgColor: 'bg-violet-500/10 dark:bg-violet-500/20',
-      iconColor: 'text-violet-600 dark:text-violet-400',
-    },
-    {
       id: 'ebooks',
       icon: <BookOpen className="h-8 w-8" />,
       titleKey: 'hubEbooks',

@@ -267,7 +267,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "student" | "teacher"
+      app_role: "student" | "teacher" | "admin"
       content_language: "hindi" | "english"
       content_type: "video" | "article" | "pdf"
     }
@@ -397,7 +397,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["student", "teacher"],
+      app_role: ["student", "teacher", "admin"],
       content_language: ["hindi", "english"],
       content_type: ["video", "article", "pdf"],
     },

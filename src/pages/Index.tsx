@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, GraduationCap, Users, WifiOff, Globe, School } from 'lucide-react';
+import { BookOpen, GraduationCap, Users, WifiOff, Globe, School, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -66,7 +66,7 @@ const Index = () => {
             </div>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
               <Link to="/auth?role=student">
                 <Button size="lg" className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
                   <GraduationCap className="h-6 w-6" />
@@ -77,6 +77,16 @@ const Index = () => {
                 <Button size="lg" variant="outline" className="gap-2 text-lg px-8 py-6 border-2 hover:bg-primary/5 transition-all">
                   <Users className="h-6 w-6" />
                   {t('teacherLogin')}
+                </Button>
+              </Link>
+            </div>
+
+            {/* Admin Login - Separate subtle button */}
+            <div className="mb-12">
+              <Link to="/auth?role=admin">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                  <Shield className="h-4 w-4" />
+                  {language === 'hi' ? 'एडमिन लॉगिन' : 'Admin Login'}
                 </Button>
               </Link>
             </div>

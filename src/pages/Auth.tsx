@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { GraduationCap, Users, ArrowLeft, Loader2 } from 'lucide-react';
+import { GraduationCap, Users, ArrowLeft, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { MissionBanner } from '@/components/MissionBanner';
 import { supabase } from '@/integrations/supabase/client';
 
-type Role = 'student' | 'teacher';
+type Role = 'student' | 'teacher' | 'admin';
 
 export default function Auth() {
   const [searchParams] = useSearchParams();
@@ -39,13 +39,22 @@ export default function Auth() {
   // Redirect if already logged in
   useEffect(() => {
     if (!authLoading && user && userRole) {
-      if (userRole === 'teacher') {
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'teacher') {
         navigate('/teacher');
       } else {
         navigate('/student');
       }
     }
   }, [user, userRole, authLoading, navigate]);
+
+  // Admin can only login, not signup
+  useEffect(() => {
+    if (role === 'admin') {
+      setIsLogin(true);
+    }
+  }, [role]);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +168,10 @@ export default function Auth() {
   };
 
   // Get translated role name
-  const getRoleName = (r: Role) => r === 'student' ? t('student') : t('teacher');
+  const getRoleName = (r: Role) => {
+    if (r === 'admin') return preferredLanguage === 'hi' ? 'एडमिन' : 'Admin';
+    return r === 'student' ? t('student') : t('teacher');
+  };
 
   if (authLoading) {
     return (
@@ -190,8 +202,8 @@ export default function Auth() {
         </Button>
 
         <div className="max-w-md mx-auto">
-          {/* Role Selector - hide during forgot password */}
-          {!isForgotPassword && (
+          {/* Role Selector - hide during forgot password and for admin */}
+          {!isForgotPassword && role !== 'admin' && (
             <Tabs value={role} onValueChange={(v) => setRole(v as Role)} className="mb-6">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="student" className="flex items-center gap-2">
@@ -209,10 +221,12 @@ export default function Auth() {
           <Card className="shadow-soft">
             <CardHeader className="text-center">
               <div className={`mx-auto p-3 rounded-full ${
-                role === 'student' ? 'bg-primary/10' : 'bg-accent/10'
+                role === 'admin' ? 'bg-destructive/10' : role === 'student' ? 'bg-primary/10' : 'bg-accent/10'
               } mb-2`}>
-                {role === 'student' ? (
-                  <GraduationCap className={`h-6 w-6 ${role === 'student' ? 'text-primary' : 'text-accent'}`} />
+                {role === 'admin' ? (
+                  <Shield className="h-6 w-6 text-destructive" />
+                ) : role === 'student' ? (
+                  <GraduationCap className="h-6 w-6 text-primary" />
                 ) : (
                   <Users className="h-6 w-6 text-accent" />
                 )}
@@ -352,17 +366,20 @@ export default function Auth() {
                   </form>
 
                   <div className="mt-4 text-center space-y-2">
-                    <Button
-                      variant="link"
-                      onClick={() => setIsLogin(!isLogin)}
-                      className="text-sm"
-                    >
-                      {isLogin 
-                        ? t('dontHaveAccount')
-                        : t('alreadyHaveAccount')}
-                    </Button>
+                    {/* Hide signup toggle for admin */}
+                    {role !== 'admin' && (
+                      <Button
+                        variant="link"
+                        onClick={() => setIsLogin(!isLogin)}
+                        className="text-sm"
+                      >
+                        {isLogin 
+                          ? t('dontHaveAccount')
+                          : t('alreadyHaveAccount')}
+                      </Button>
+                    )}
 
-                    {isLogin && (
+                    {isLogin && role !== 'admin' && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -371,6 +388,12 @@ export default function Auth() {
                       >
                         {t('useDemoCredentials')}
                       </Button>
+                    )}
+
+                    {role === 'admin' && (
+                      <p className="text-xs text-muted-foreground">
+                        Admin accounts are created by the system administrator.
+                      </p>
                     )}
                   </div>
                 </>

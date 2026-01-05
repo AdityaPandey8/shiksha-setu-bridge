@@ -231,6 +231,39 @@ export type Database = {
         }
         Relationships: []
       }
+      teacher_assignments: {
+        Row: {
+          classes: string[]
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          subjects: string[]
+          teacher_id: string
+          updated_at: string
+        }
+        Insert: {
+          classes?: string[]
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          subjects?: string[]
+          teacher_id: string
+          updated_at?: string
+        }
+        Update: {
+          classes?: string[]
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          subjects?: string[]
+          teacher_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

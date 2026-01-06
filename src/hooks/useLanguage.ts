@@ -23,9 +23,12 @@ export const translations = {
   en: {
     // Home Page
     selectLanguage: "Select Language",
-    bridgeToEducation: "Bridge to Education",
-    offlineFirstLearning: "Offline-First Learning",
-    heroDescription: "Ensuring uninterrupted learning for students in Kashmir, Ladakh, North-East, tribal areas, and border villages — even without internet connectivity.",
+    mainTagline: "Learn Anywhere. Focus Everywhere.",
+    subTagline: "Internet optional. Learning uninterrupted.",
+    offlineFirstLearning: "Offline-First & Focus-First Learning",
+    heroDescription: "Shiksha Setu empowers students across rural and urban India to study without distractions. Even with good internet, students can switch to offline mode and focus on learning — no social media, no notifications, no interruptions.",
+    secondaryValueStatement: "Designed for low-connectivity regions and high-distraction environments alike.",
+    focusModeExplanation: "Students can download content once, turn off the internet, and study peacefully.",
     uninterruptedLearning: "uninterrupted learning",
     evenWithoutInternet: " even without internet connectivity",
     studentLogin: "Student Login",
@@ -33,6 +36,8 @@ export const translations = {
     whyShikshaSetu: "Why",
     worksOffline: "Works Offline",
     worksOfflineDesc: "Download lessons once and access them anytime, anywhere — no internet required. Perfect for remote areas.",
+    focusMode: "Focus Mode",
+    focusModeDesc: "Turn off distractions. Study in peace without social media notifications or interruptions.",
     hindiEnglish: "Hindi & English",
     hindiEnglishDesc: "Content available in both Hindi and English to support students from diverse linguistic backgrounds.",
     classes6to10: "Classes 6-10",
@@ -45,8 +50,8 @@ export const translations = {
     learnOfflineDesc: "Study anytime, even without connectivity",
     syncProgress: "Sync Progress",
     syncProgressDesc: "Your progress syncs automatically when you're back online",
-    footerTagline: "Shiksha Setu — Bridging the Digital Divide in Education",
-    builtForStudents: "Built for students in remote India 🇮🇳",
+    footerTagline: "Shiksha Setu — Not just offline, but distraction-free learning",
+    builtForStudents: "Built for every student in India 🇮🇳",
 
     // Auth Page
     login: "Login",
@@ -303,9 +308,12 @@ export const translations = {
   hi: {
     // Home Page
     selectLanguage: "भाषा चुनें",
-    bridgeToEducation: "शिक्षा का सेतु",
-    offlineFirstLearning: "ऑफलाइन-प्राथमिक शिक्षा",
-    heroDescription: "कश्मीर, लद्दाख, पूर्वोत्तर, आदिवासी क्षेत्रों और सीमावर्ती गांवों के छात्रों के लिए निर्बाध शिक्षा सुनिश्चित करना — इंटरनेट कनेक्टिविटी के बिना भी।",
+    mainTagline: "कहीं भी सीखें। हर जगह ध्यान दें।",
+    subTagline: "इंटरनेट वैकल्पिक। शिक्षा निर्बाध।",
+    offlineFirstLearning: "ऑफलाइन-फर्स्ट और फोकस-फर्स्ट लर्निंग",
+    heroDescription: "शिक्षा सेतु ग्रामीण और शहरी भारत के छात्रों को बिना विकर्षण के पढ़ाई करने में सक्षम बनाता है। अच्छे इंटरनेट के साथ भी, छात्र ऑफलाइन मोड में जाकर पढ़ाई पर ध्यान दे सकते हैं — कोई सोशल मीडिया नहीं, कोई नोटिफिकेशन नहीं, कोई बाधा नहीं।",
+    secondaryValueStatement: "कम कनेक्टिविटी वाले क्षेत्रों और उच्च-विकर्षण वातावरण दोनों के लिए डिज़ाइन किया गया।",
+    focusModeExplanation: "छात्र एक बार सामग्री डाउनलोड कर सकते हैं, इंटरनेट बंद कर सकते हैं, और शांति से पढ़ाई कर सकते हैं।",
     uninterruptedLearning: "निर्बाध शिक्षा",
     evenWithoutInternet: " इंटरनेट कनेक्टिविटी के बिना भी",
     studentLogin: "छात्र लॉगिन",
@@ -313,6 +321,8 @@ export const translations = {
     whyShikshaSetu: "क्यों",
     worksOffline: "ऑफलाइन काम करता है",
     worksOfflineDesc: "एक बार पाठ डाउनलोड करें और कभी भी, कहीं भी एक्सेस करें — इंटरनेट की आवश्यकता नहीं। दूरदराज के इलाकों के लिए उपयुक्त।",
+    focusMode: "फोकस मोड",
+    focusModeDesc: "विकर्षण बंद करें। सोशल मीडिया नोटिफिकेशन या बाधाओं के बिना शांति से पढ़ें।",
     hindiEnglish: "हिंदी और अंग्रेज़ी",
     hindiEnglishDesc: "विविध भाषाई पृष्ठभूमि के छात्रों के लिए हिंदी और अंग्रेज़ी दोनों में सामग्री उपलब्ध।",
     classes6to10: "कक्षा 6-10",
@@ -325,8 +335,8 @@ export const translations = {
     learnOfflineDesc: "बिना कनेक्टिविटी के भी कभी भी पढ़ाई करें",
     syncProgress: "प्रगति सिंक करें",
     syncProgressDesc: "जब आप वापस ऑनलाइन आते हैं तो आपकी प्रगति स्वचालित रूप से सिंक होती है",
-    footerTagline: "शिक्षा सेतु — शिक्षा में डिजिटल विभाजन को पाटना",
-    builtForStudents: "भारत के दूरस्थ छात्रों के लिए निर्मित 🇮🇳",
+    footerTagline: "शिक्षा सेतु — सिर्फ ऑफलाइन नहीं, बल्कि विकर्षण-मुक्त शिक्षा",
+    builtForStudents: "भारत के हर छात्र के लिए निर्मित 🇮🇳",
 
     // Auth Page
     login: "लॉगिन",

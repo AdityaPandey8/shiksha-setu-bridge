@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, GraduationCap, Users, WifiOff, Globe, School, Shield } from 'lucide-react';
+import { BookOpen, GraduationCap, Users, WifiOff, Globe, School, Shield, Focus, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -8,14 +8,13 @@ const Index = () => {
   const { language, setLanguage, t } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/10">
       {/* Hero Section */}
-      <header className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10" />
-        <div className="container mx-auto px-4 py-16 md:py-24 relative">
-          {/* Language Selector - Positioned at top */}
-          <div className="flex justify-center mb-8 animate-fade-in">
-            <div className="flex items-center gap-3 bg-card/80 backdrop-blur-sm border rounded-full px-4 py-2 shadow-soft">
+      <header className="relative">
+        <div className="container mx-auto px-4 py-12 md:py-20">
+          {/* Language Selector */}
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center gap-3 bg-card border rounded-full px-4 py-2 shadow-sm">
               <Globe className="h-4 w-4 text-primary" />
               <span className="text-sm text-muted-foreground">{t('selectLanguage')}:</span>
               <div className="flex gap-1">
@@ -39,25 +38,31 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="flex flex-col items-center text-center max-w-4xl mx-auto animate-fade-in">
+          <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
             {/* Logo and Title */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-primary rounded-2xl shadow-lg">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-primary rounded-2xl shadow-md">
                 <BookOpen className="h-10 w-10 text-primary-foreground" />
               </div>
-              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground">
                 शिक्षा सेतु
               </h1>
             </div>
             
-            <p className="text-xl md:text-2xl text-muted-foreground mb-4">
-              Shiksha Setu - {t('bridgeToEducation')}
+            {/* Main Tagline */}
+            <p className="text-2xl md:text-3xl font-semibold text-primary mb-2">
+              Shiksha Setu — {t('mainTagline')}
+            </p>
+            
+            {/* Sub-tagline */}
+            <p className="text-lg text-muted-foreground mb-8">
+              {t('subTagline')}
             </p>
 
-            {/* Mission Banner */}
-            <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 mb-8 max-w-2xl">
+            {/* Main Feature Banner */}
+            <div className="bg-primary/5 border border-primary/20 rounded-2xl p-6 mb-6 max-w-2xl w-full">
               <div className="flex items-center justify-center gap-2 mb-3">
-                <WifiOff className="h-5 w-5 text-primary" />
+                <BookOpen className="h-5 w-5 text-primary" />
                 <span className="text-lg font-semibold text-primary">{t('offlineFirstLearning')}</span>
               </div>
               <p className="text-foreground/80 leading-relaxed">
@@ -65,24 +70,35 @@ const Index = () => {
               </p>
             </div>
 
+            {/* Secondary Value Statement */}
+            <p className="text-base text-muted-foreground mb-4 max-w-xl">
+              {t('secondaryValueStatement')}
+            </p>
+
+            {/* Focus Mode Explanation */}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8 bg-secondary/50 px-4 py-2 rounded-full">
+              <Download className="h-4 w-4" />
+              <span>{t('focusModeExplanation')}</span>
+            </div>
+
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <Link to="/auth?role=student">
-                <Button size="lg" className="gap-2 text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
+                <Button size="lg" className="gap-2 text-lg px-8 py-6 shadow-md">
                   <GraduationCap className="h-6 w-6" />
                   {t('studentLogin')}
                 </Button>
               </Link>
               <Link to="/auth?role=teacher">
-                <Button size="lg" variant="outline" className="gap-2 text-lg px-8 py-6 border-2 hover:bg-primary/5 transition-all">
+                <Button size="lg" variant="outline" className="gap-2 text-lg px-8 py-6 border-2">
                   <Users className="h-6 w-6" />
                   {t('teacherLogin')}
                 </Button>
               </Link>
             </div>
 
-            {/* Admin Login - Separate subtle button */}
-            <div className="mb-12">
+            {/* Admin Login */}
+            <div className="mb-8">
               <Link to="/auth?role=admin">
                 <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
                   <Shield className="h-4 w-4" />
@@ -95,49 +111,63 @@ const Index = () => {
       </header>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-center mb-12">
+      <section className="container mx-auto px-4 py-12">
+        <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
           {t('whyShikshaSetu')} <span className="text-primary">Shiksha Setu</span>?
         </h2>
         
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <CardHeader className="text-center">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-5xl mx-auto">
+          <Card className="border hover:border-primary/40 transition-colors">
+            <CardHeader className="text-center pb-2">
               <div className="mx-auto p-3 bg-primary/10 rounded-xl w-fit mb-2">
-                <WifiOff className="h-8 w-8 text-primary" />
+                <WifiOff className="h-7 w-7 text-primary" />
               </div>
-              <CardTitle>{t('worksOffline')}</CardTitle>
+              <CardTitle className="text-base">{t('worksOffline')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-center text-base">
+              <CardDescription className="text-center text-sm">
                 {t('worksOfflineDesc')}
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <CardHeader className="text-center">
+          <Card className="border hover:border-primary/40 transition-colors">
+            <CardHeader className="text-center pb-2">
               <div className="mx-auto p-3 bg-primary/10 rounded-xl w-fit mb-2">
-                <Globe className="h-8 w-8 text-primary" />
+                <Focus className="h-7 w-7 text-primary" />
               </div>
-              <CardTitle>{t('hindiEnglish')}</CardTitle>
+              <CardTitle className="text-base">{t('focusMode')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-center text-base">
+              <CardDescription className="text-center text-sm">
+                {t('focusModeDesc')}
+              </CardDescription>
+            </CardContent>
+          </Card>
+
+          <Card className="border hover:border-primary/40 transition-colors">
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto p-3 bg-primary/10 rounded-xl w-fit mb-2">
+                <Globe className="h-7 w-7 text-primary" />
+              </div>
+              <CardTitle className="text-base">{t('hindiEnglish')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <CardDescription className="text-center text-sm">
                 {t('hindiEnglishDesc')}
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="border-2 hover:border-primary/50 transition-all hover:shadow-lg animate-fade-in" style={{ animationDelay: '0.3s' }}>
-            <CardHeader className="text-center">
+          <Card className="border hover:border-primary/40 transition-colors">
+            <CardHeader className="text-center pb-2">
               <div className="mx-auto p-3 bg-primary/10 rounded-xl w-fit mb-2">
-                <School className="h-8 w-8 text-primary" />
+                <School className="h-7 w-7 text-primary" />
               </div>
-              <CardTitle>{t('classes6to10')}</CardTitle>
+              <CardTitle className="text-base">{t('classes6to10')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription className="text-center text-base">
+              <CardDescription className="text-center text-sm">
                 {t('classes6to10Desc')}
               </CardDescription>
             </CardContent>

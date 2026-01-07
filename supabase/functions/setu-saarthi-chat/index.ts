@@ -174,7 +174,15 @@ RESPONSE STYLE:
 - Keep responses concise but helpful
 - Use bullet points for lists
 - Include relevant emojis to make learning fun
-- End with an encouraging note or follow-up question when appropriate`;
+- End with an encouraging note or follow-up question when appropriate
+
+LANGUAGE DETECTION (CRITICAL):
+- ALWAYS detect the language of the user's message and respond in the SAME language
+- If user writes in English → Respond in English
+- If user writes in Hindi → Respond in Hindi
+- If user writes in Hinglish (mixed) → Respond in Hinglish
+- NEVER default to Hindi unless the user's message is in Hindi
+- Match the user's language exactly for every response`;
 
   // Add context if available
   let contextInfo = "";
@@ -188,9 +196,6 @@ RESPONSE STYLE:
     }
     if (context.chapter) {
       contextInfo += `\n- Currently studying: ${context.chapter}`;
-    }
-    if (context.language === "hindi") {
-      contextInfo += `\n\nIMPORTANT: Respond in Hindi when the student writes in Hindi. Mix Hindi and English (Hinglish) naturally.`;
     }
   }
 

@@ -304,6 +304,14 @@ export const translations = {
     noBookmarks: "No bookmarks yet",
     noDoubts: "No doubts saved",
     noFlashcards: "No flashcards created",
+
+    // Login Streak
+    loginStreak: "Login Streak",
+    loginStreakDays: "{count} days",
+    loginStreakDay: "1 day",
+    streakBroken: "Streak restarted! Keep going!",
+    offlineStreakSaved: "Offline Mode – Login streak saved locally",
+    greatStreak: "Great streak! Keep it up! 🔥",
   },
   hi: {
     // Home Page
@@ -589,6 +597,14 @@ export const translations = {
     noBookmarks: "अभी तक कोई बुकमार्क नहीं",
     noDoubts: "कोई संदेह सहेजा नहीं गया",
     noFlashcards: "कोई फ्लैशकार्ड नहीं बनाया गया",
+
+    // Login Streak
+    loginStreak: "लॉगिन स्ट्रीक",
+    loginStreakDays: "{count} दिन",
+    loginStreakDay: "1 दिन",
+    streakBroken: "स्ट्रीक फिर से शुरू! आगे बढ़ते रहो!",
+    offlineStreakSaved: "ऑफलाइन मोड – लॉगिन स्ट्रीक स्थानीय रूप से सहेजी गई",
+    greatStreak: "शानदार स्ट्रीक! जारी रखो! 🔥",
   }
 };
 

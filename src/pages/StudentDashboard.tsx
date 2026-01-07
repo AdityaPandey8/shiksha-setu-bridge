@@ -1,14 +1,16 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, BookOpen, Loader2 } from 'lucide-react';
+import { LogOut, BookOpen, Loader2, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useLoginStreak } from '@/hooks/useLoginStreak';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OfflineModeBanner, ConnectionStatus } from '@/components/ConnectionStatus';
 import { StudentLearningHub } from '@/components/StudentLearningHub';
 import { OfflineChatbot } from '@/components/OfflineChatbot';
 import { OfflineUtilitiesPanel } from '@/components/OfflineUtilitiesPanel';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * StudentDashboard - Clean Feature Selector
@@ -27,6 +29,12 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
   const { user, profile, signOut, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  
+  // Login Streak - Offline-first tracking
+  const { streakCount, streakBroken, isOnline } = useLoginStreak(
+    user?.email,
+    profile?.full_name || 'Student'
+  );
 
   // Redirect if not logged in
   useEffect(() => {
@@ -50,6 +58,12 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Offline Streak Banner - Show when offline */}
+      {!isOnline && streakCount > 0 && (
+        <div className="bg-amber-50 dark:bg-amber-950 border-b border-amber-200 dark:border-amber-800 px-4 py-2 text-center text-sm text-amber-700 dark:text-amber-300">
+          {t('offlineStreakSaved')}
+        </div>
+      )}
       {/* Offline/Syncing Banner */}
       <OfflineModeBanner />
       <MissionBanner />
@@ -63,10 +77,31 @@ export default function StudentDashboard() {
                 <BookOpen className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h1 className="text-lg font-bold">{t('studentLearningApp')}</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-lg font-bold">{t('studentLearningApp')}</h1>
+                  {/* Login Streak Badge */}
+                  {streakCount > 0 && (
+                    <Badge 
+                      variant="outline" 
+                      className="bg-green-50 text-green-700 border-green-300 dark:bg-green-950 dark:text-green-300 dark:border-green-700"
+                    >
+                      <Flame className="h-3 w-3 mr-1 text-orange-500" />
+                      {t('loginStreak')}: {streakCount > 1 
+                        ? t('loginStreakDays', { count: String(streakCount) })
+                        : t('loginStreakDay')
+                      }
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  {t('welcome')}, {profile?.full_name || t('student')}
+                  {t('welcome')}, {profile?.full_name || t('student')} ({t('student')})
                 </p>
+                {/* Streak broken notification */}
+                {streakBroken && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    {t('streakBroken')}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">

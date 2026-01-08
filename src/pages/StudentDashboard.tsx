@@ -9,7 +9,6 @@ import { MissionBanner } from '@/components/MissionBanner';
 import { OfflineModeBanner, ConnectionStatus } from '@/components/ConnectionStatus';
 import { StudentLearningHub } from '@/components/StudentLearningHub';
 import { OfflineChatbot } from '@/components/OfflineChatbot';
-import { OfflineUtilitiesPanel } from '@/components/OfflineUtilitiesPanel';
 import { Badge } from '@/components/ui/badge';
 
 /**
@@ -116,12 +115,8 @@ export default function StudentDashboard() {
         </div>
       </header>
 
-      {/* Main Content - Learning Hub Navigation Cards + Offline Utilities */}
-      <main className="container mx-auto px-4 py-8">
-        {/* Daily Motivational Tip */}
-        <OfflineUtilitiesPanel />
-        
-        {/* Learning Path Selection Cards */}
+      {/* Main Content - Learning Hub Navigation Cards */}
+      <main className="container mx-auto px-4 py-6">
         <StudentLearningHub />
       </main>
 

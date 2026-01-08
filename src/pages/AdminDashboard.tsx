@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -294,9 +294,14 @@ export default function AdminDashboard() {
               <p className="text-sm text-muted-foreground">Shiksha Setu Control Panel</p>
             </div>
           </div>
-          <Button variant="outline" onClick={handleLogout}>
-            Logout
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title="Profile & Settings">
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" onClick={handleLogout}>
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 

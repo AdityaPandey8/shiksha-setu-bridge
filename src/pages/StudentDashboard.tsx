@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, BookOpen, Loader2, Flame } from 'lucide-react';
+import { LogOut, BookOpen, Loader2, Flame, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -103,9 +103,12 @@ export default function StudentDashboard() {
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {/* Real-time Connectivity Status */}
               <ConnectionStatus />
+              <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title={t('profileSettings')}>
+                <Settings className="h-4 w-4" />
+              </Button>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 {t('logout')}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -414,8 +414,11 @@ export default function TeacherDashboard() {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <OnlineIndicator />
+              <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title={t('profileSettings')}>
+                <Settings className="h-4 w-4" />
+              </Button>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
                 {t('logout')}

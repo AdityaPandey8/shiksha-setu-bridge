@@ -23,6 +23,7 @@ import { OnlineIndicator } from '@/components/OfflineBanner';
 import { EbookManager } from '@/components/EbookManager';
 import { EbookPdfManager } from '@/components/EbookPdfManager';
 import { useEbookStorage } from '@/hooks/useEbookStorage';
+import { ChatbotSummaryManager } from '@/components/ChatbotSummaryManager';
 
 interface ContentItem {
   id: string;
@@ -487,10 +488,11 @@ export default function TeacherDashboard() {
 
         {/* Tabs */}
         <Tabs defaultValue="content" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 max-w-xl">
+          <TabsList className="grid w-full grid-cols-5 max-w-2xl">
             <TabsTrigger value="content">{t('content')}</TabsTrigger>
             <TabsTrigger value="ebooks">{t('ebooks')}</TabsTrigger>
             <TabsTrigger value="quizzes">{t('quizzes')}</TabsTrigger>
+            <TabsTrigger value="summaries">{t('chatbotSummaries')}</TabsTrigger>
             <TabsTrigger value="students">{t('students')}</TabsTrigger>
           </TabsList>
 
@@ -498,6 +500,11 @@ export default function TeacherDashboard() {
           <TabsContent value="ebooks" className="space-y-6">
             <EbookPdfManager />
             <EbookManager />
+          </TabsContent>
+
+          {/* Chatbot Summaries Tab */}
+          <TabsContent value="summaries">
+            <ChatbotSummaryManager />
           </TabsContent>
 
           {/* Content Tab */}

@@ -346,6 +346,23 @@ export const translations = {
     logoutButton: "Logout from Account",
     offlineModeChangesWillSync: "Offline Mode – Changes will sync when online",
     pendingChangesWillSync: "You have pending changes that will sync when you're back online.",
+
+    // Chatbot Summaries
+    chatbotSummaries: "Chatbot Summaries",
+    chatbotSummariesDesc: "Manage chapter summaries for Setu Saarthi offline mode",
+    addSummary: "Add Summary",
+    editSummary: "Edit Summary",
+    deleteSummary: "Delete Summary",
+    summaryAdded: "Summary Added!",
+    summaryUpdated: "Summary Updated!",
+    summaryDeleted: "Summary Deleted",
+    noSummariesYet: "No summaries added yet",
+    chapterSummary: "Chapter Summary",
+    keyPoints: "Key Points",
+    subject: "Subject",
+    chapterId: "Chapter ID/Name",
+    summaryWillBeUsedOffline: "This summary will be used by Setu Saarthi to answer students offline",
+    chatbotKnowledgeUpdated: "Chatbot knowledge updated",
   },
   hi: {
     // Home Page
@@ -673,6 +690,23 @@ export const translations = {
     logoutButton: "खाते से लॉगआउट करें",
     offlineModeChangesWillSync: "ऑफ़लाइन मोड – परिवर्तन ऑनलाइन होने पर सिंक होंगे",
     pendingChangesWillSync: "आपके पास लंबित परिवर्तन हैं जो आपके ऑनलाइन होने पर सिंक होंगे।",
+
+    // Chatbot Summaries
+    chatbotSummaries: "चैटबॉट सारांश",
+    chatbotSummariesDesc: "सेतु सार्थी ऑफलाइन मोड के लिए अध्याय सारांश प्रबंधित करें",
+    addSummary: "सारांश जोड़ें",
+    editSummary: "सारांश संपादित करें",
+    deleteSummary: "सारांश हटाएं",
+    summaryAdded: "सारांश जोड़ा गया!",
+    summaryUpdated: "सारांश अपडेट किया गया!",
+    summaryDeleted: "सारांश हटाया गया",
+    noSummariesYet: "अभी तक कोई सारांश नहीं जोड़ा गया",
+    chapterSummary: "अध्याय सारांश",
+    keyPoints: "मुख्य बिंदु",
+    subject: "विषय",
+    chapterId: "अध्याय ID/नाम",
+    summaryWillBeUsedOffline: "यह सारांश छात्रों को ऑफलाइन में सेतु सार्थी द्वारा दिया जाएगा",
+    chatbotKnowledgeUpdated: "चैटबॉट ज्ञान अपडेट किया गया",
   }
 };
 

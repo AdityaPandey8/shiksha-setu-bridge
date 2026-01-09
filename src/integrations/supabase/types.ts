@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      chatbot_summaries: {
+        Row: {
+          chapter_id: string
+          class: string
+          created_at: string
+          created_by: string | null
+          id: string
+          key_points: string[] | null
+          language: Database["public"]["Enums"]["content_language"]
+          subject: string
+          summary_text: string
+          updated_at: string
+        }
+        Insert: {
+          chapter_id: string
+          class: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_points?: string[] | null
+          language?: Database["public"]["Enums"]["content_language"]
+          subject: string
+          summary_text: string
+          updated_at?: string
+        }
+        Update: {
+          chapter_id?: string
+          class?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          key_points?: string[] | null
+          language?: Database["public"]["Enums"]["content_language"]
+          subject?: string
+          summary_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       content: {
         Row: {
           class: string

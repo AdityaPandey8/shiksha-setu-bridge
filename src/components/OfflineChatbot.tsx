@@ -1,10 +1,10 @@
 /**
  * OfflineChatbot Component
  * 
- * A lightweight chatbot that works OFFLINE using keyword-based responses.
+ * A lightweight chatbot that works OFFLINE using teacher-provided summaries and keyword-based responses.
  * 
  * OFFLINE MODE: "Offline Assistant (Limited)"
- * - Chapter summaries
+ * - Chapter summaries (from teacher-provided data)
  * - Quiz hints (not answers)
  * - Career info
  * - App navigation help
@@ -22,6 +22,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useChatbotSummarySync, ChapterSummary } from '@/hooks/useChatbotSummarySync';
 
 interface Message {
   id: string;
@@ -30,7 +31,16 @@ interface Message {
   timestamp: Date;
 }
 
-// Keyword-based response patterns for offline mode
+// Subject keyword mappings for matching
+const SUBJECT_KEYWORDS: Record<string, string[]> = {
+  mathematics: ['maths', 'math', 'algebra', 'geometry', 'गणित', 'बीजगणित', 'ज्यामिति', 'arithmetic', 'trigonometry'],
+  science: ['science', 'physics', 'chemistry', 'biology', 'विज्ञान', 'भौतिकी', 'रसायन', 'जीव विज्ञान'],
+  social_science: ['social', 'history', 'geography', 'civics', 'इतिहास', 'भूगोल', 'नागरिक शास्त्र', 'सामाजिक'],
+  hindi: ['hindi', 'हिंदी', 'व्याकरण', 'grammar'],
+  english: ['english', 'अंग्रेज़ी', 'अंग्रेजी'],
+};
+
+// Keyword-based response patterns for offline mode (fallback when no summary matches)
 const OFFLINE_RESPONSES = {
   greetings: {
     keywords: ['hello', 'hi', 'hey', 'namaste', 'नमस्ते', 'हेलो'],
@@ -43,7 +53,7 @@ const OFFLINE_RESPONSES = {
     hi: "📝 क्विज़ टिप्स:\n• प्रत्येक प्रश्न को ध्यान से पढ़ें\n• पहले स्पष्ट गलत उत्तरों को हटाएं\n• अगर फंस जाएं, तो आगे बढ़ें और बाद में वापस आएं",
   },
   ebook: {
-    keywords: ['ebook', 'book', 'chapter', 'read', 'पढ़', 'किताब', 'अध्याय'],
+    keywords: ['ebook', 'book', 'read', 'पढ़', 'किताब'],
     en: "📚 E-Book Navigation:\n• Go to E-Books section from the main menu\n• Downloaded chapters are available offline\n• Use bookmarks to save your progress\n• Each chapter has a summary for quick revision",
     hi: "📚 ई-बुक नेविगेशन:\n• मुख्य मेनू से ई-बुक्स सेक्शन में जाएं\n• डाउनलोड किए गए अध्याय ऑफ़लाइन उपलब्ध हैं\n• प्रगति सहेजने के लिए बुकमार्क का उपयोग करें",
   },
@@ -67,16 +77,6 @@ const OFFLINE_RESPONSES = {
     en: "📡 Offline Mode Info:\n• All downloaded content works without internet\n• Quiz attempts are saved locally\n• Progress syncs when you're back online\n• Look for green dots to see what's available offline",
     hi: "📡 ऑफ़लाइन मोड जानकारी:\n• सभी डाउनलोड किया गया कंटेंट बिना इंटरनेट के काम करता है\n• क्विज़ प्रयास स्थानीय रूप से सहेजे जाते हैं\n• ऑनलाइन होने पर प्रगति सिंक होती है",
   },
-  maths: {
-    keywords: ['maths', 'math', 'algebra', 'geometry', 'गणित', 'बीजगणित'],
-    en: "🔢 Mathematics Tips:\n• Practice regularly - do at least 5 problems daily\n• Understand concepts before memorizing formulas\n• Draw diagrams for geometry problems\n• Check your work by substituting answers back",
-    hi: "🔢 गणित टिप्स:\n• नियमित अभ्यास करें - रोज़ाना कम से कम 5 प्रश्न करें\n• सूत्र याद करने से पहले अवधारणाओं को समझें\n• ज्यामिति समस्याओं के लिए आरेख बनाएं",
-  },
-  science: {
-    keywords: ['science', 'physics', 'chemistry', 'biology', 'विज्ञान', 'भौतिकी', 'रसायन'],
-    en: "🔬 Science Tips:\n• Focus on understanding concepts, not just memorizing\n• Make diagrams and flowcharts\n• Connect topics to real-world examples\n• Practice numerical problems for physics and chemistry",
-    hi: "🔬 विज्ञान टिप्स:\n• केवल याद करने के बजाय अवधारणाओं को समझने पर ध्यान दें\n• आरेख और फ्लोचार्ट बनाएं\n• विषयों को वास्तविक दुनिया के उदाहरणों से जोड़ें",
-  },
   default: {
     en: "I'm in offline mode with limited capabilities. I can help you with:\n• Chapter summaries\n• Quiz hints\n• Career information\n• App navigation\n\nTry asking about e-books, quizzes, career, or content!",
     hi: "मैं सीमित क्षमताओं के साथ ऑफ़लाइन मोड में हूं। मैं इनमें मदद कर सकता हूं:\n• अध्याय सारांश\n• क्विज़ संकेत\n• करियर जानकारी\n• ऐप नेविगेशन\n\nई-बुक्स, क्विज़, करियर, या कंटेंट के बारे में पूछें!",
@@ -90,6 +90,7 @@ export function OfflineChatbot() {
   const [input, setInput] = useState('');
   const isOnline = useOnlineStatus();
   const { isHindi } = useLanguage();
+  const { searchSummaries, getSummaries } = useChatbotSummarySync();
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -110,9 +111,10 @@ export function OfflineChatbot() {
   // Initialize with welcome message
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      const summaryCount = getSummaries().length;
       const welcomeText = isHindi
-        ? OFFLINE_RESPONSES.greetings.hi
-        : OFFLINE_RESPONSES.greetings.en;
+        ? `${OFFLINE_RESPONSES.greetings.hi}${summaryCount > 0 ? `\n\n📚 मेरे पास ${summaryCount} अध्याय सारांश उपलब्ध हैं।` : ''}`
+        : `${OFFLINE_RESPONSES.greetings.en}${summaryCount > 0 ? `\n\n📚 I have ${summaryCount} chapter summaries available.` : ''}`;
       setMessages([
         {
           id: 'welcome',
@@ -122,12 +124,61 @@ export function OfflineChatbot() {
         },
       ]);
     }
-  }, [isOpen, messages.length, isHindi]);
+  }, [isOpen, messages.length, isHindi, getSummaries]);
 
-  // Generate response based on keywords
+  // Format summary response
+  const formatSummaryResponse = (summary: ChapterSummary): string => {
+    const lang = isHindi ? 'hi' : 'en';
+    const header = isHindi 
+      ? `📖 **${summary.chapter_id}** (${summary.subject})\n\n`
+      : `📖 **${summary.chapter_id}** (${summary.subject})\n\n`;
+    
+    let response = header + summary.summary_text;
+
+    if (summary.key_points && summary.key_points.length > 0) {
+      const keyPointsHeader = isHindi ? '\n\n🔑 **मुख्य बिंदु:**' : '\n\n🔑 **Key Points:**';
+      response += keyPointsHeader;
+      summary.key_points.forEach(point => {
+        response += `\n• ${point}`;
+      });
+    }
+
+    return response;
+  };
+
+  // Detect subject from message
+  const detectSubject = (message: string): string | null => {
+    const lowerMessage = message.toLowerCase();
+    for (const [subject, keywords] of Object.entries(SUBJECT_KEYWORDS)) {
+      if (keywords.some(keyword => lowerMessage.includes(keyword.toLowerCase()))) {
+        return subject;
+      }
+    }
+    return null;
+  };
+
+  // Generate response based on keywords and teacher summaries
   const generateResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
 
+    // First, try to find matching chapter summaries
+    const matchingSummaries = searchSummaries(userMessage, undefined, isHindi ? 'hindi' : 'english');
+    
+    if (matchingSummaries.length > 0) {
+      // Return the most relevant summary
+      return formatSummaryResponse(matchingSummaries[0]);
+    }
+
+    // Check if asking about a specific subject/chapter
+    const detectedSubject = detectSubject(userMessage);
+    if (detectedSubject) {
+      const subjectSummaries = searchSummaries(detectedSubject, undefined, isHindi ? 'hindi' : 'english');
+      if (subjectSummaries.length > 0) {
+        return formatSummaryResponse(subjectSummaries[0]);
+      }
+    }
+
+    // Fallback to keyword-based responses
     for (const [, response] of Object.entries(OFFLINE_RESPONSES)) {
       if ('keywords' in response && response.keywords) {
         for (const keyword of response.keywords) {

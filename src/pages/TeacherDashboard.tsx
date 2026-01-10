@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,9 +14,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
+import { useOfflineAuth } from '@/hooks/useOfflineAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OnlineIndicator } from '@/components/OfflineBanner';
@@ -77,8 +79,13 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, signOut, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language: preferredLanguage } = useLanguage();
   const { ebooks } = useEbookStorage();
+  const { isOnline, getOfflineAuthData } = useOfflineAuth();
+  const [offlineSession, setOfflineSession] = useState(false);
+
+  // Get offline auth data for offline sessions
+  const offlineData = getOfflineAuthData();
 
   const [content, setContent] = useState<ContentItem[]>([]);
   const [quizzes, setQuizzes] = useState<QuizItem[]>([]);
@@ -105,16 +112,31 @@ export default function TeacherDashboard() {
   const [quizLanguage, setQuizLanguage] = useState<'hindi' | 'english'>('hindi');
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
 
+  // Check for offline session
+  useEffect(() => {
+    const isOfflineSession = localStorage.getItem('offlineSessionActive') === 'true';
+    setOfflineSession(isOfflineSession && !isOnline);
+  }, [isOnline]);
+
   // Redirect if not logged in or not teacher
   useEffect(() => {
     if (!authLoading) {
       if (!user) {
-        navigate('/auth?role=teacher');
+        const isOfflineSession = localStorage.getItem('offlineSessionActive') === 'true';
+        const hasOfflineData = offlineData !== null && offlineData.userRole === 'teacher';
+        
+        if (!isOnline && isOfflineSession && hasOfflineData) {
+          // Allow offline session for teachers
+          setOfflineSession(true);
+          setLoading(false);
+        } else if (isOnline || !hasOfflineData) {
+          navigate('/auth?role=teacher');
+        }
       } else if (role && role !== 'teacher') {
         navigate('/student');
       }
     }
-  }, [user, role, authLoading, navigate]);
+  }, [user, role, authLoading, navigate, isOnline, offlineData]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -361,7 +383,10 @@ export default function TeacherDashboard() {
   };
 
   const handleLogout = async () => {
-    await signOut();
+    localStorage.removeItem('offlineSessionActive');
+    if (user) {
+      await signOut();
+    }
     navigate('/');
   };
 
@@ -398,6 +423,17 @@ export default function TeacherDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Offline Login Banner */}
+      {offlineSession && (
+        <Alert className="rounded-none border-x-0 border-t-0 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+          <WifiOff className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            {preferredLanguage === 'hi' 
+              ? 'ऑफलाइन मोड: सीमित कार्यक्षमता – ऑनलाइन होने पर डेटा सिंक होगा'
+              : 'Offline Mode: Limited functionality – Data will sync when online'}
+          </AlertDescription>
+        </Alert>
+      )}
       <MissionBanner />
 
       {/* Header */}

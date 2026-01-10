@@ -1,15 +1,17 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, BookOpen, Loader2, Flame, Settings } from 'lucide-react';
+import { LogOut, BookOpen, Loader2, Flame, Settings, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useLoginStreak } from '@/hooks/useLoginStreak';
+import { useOfflineAuth } from '@/hooks/useOfflineAuth';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OfflineModeBanner, ConnectionStatus } from '@/components/ConnectionStatus';
 import { StudentLearningHub } from '@/components/StudentLearningHub';
 import { OfflineChatbot } from '@/components/OfflineChatbot';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 /**
  * StudentDashboard - Clean Feature Selector
@@ -23,31 +25,68 @@ import { Badge } from '@/components/ui/badge';
  * - Auto-syncs data when coming back online
  * - Provides offline utilities (bookmarks, notes, flashcards)
  * - Includes offline chatbot for assistance
+ * - Supports offline login with previously saved credentials
  */
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const { user, profile, signOut, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language: preferredLanguage } = useLanguage();
+  const { isOnline, getOfflineAuthData } = useOfflineAuth();
+  const [offlineSession, setOfflineSession] = useState(false);
+  
+  // Get offline auth data for offline sessions
+  const offlineData = getOfflineAuthData();
   
   // Login Streak - Offline-first tracking
-  const { streakCount, streakBroken, isOnline } = useLoginStreak(
-    user?.email,
-    profile?.full_name || 'Student'
+  const { streakCount, streakBroken, isOnline: streakOnline } = useLoginStreak(
+    user?.email || offlineData?.email,
+    profile?.full_name || offlineData?.name || 'Student'
   );
 
-  // Redirect if not logged in
+  // Check for offline session
+  useEffect(() => {
+    const isOfflineSession = localStorage.getItem('offlineSessionActive') === 'true';
+    setOfflineSession(isOfflineSession && !isOnline);
+  }, [isOnline]);
+
+  // Redirect if not logged in (online) and no offline session
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate('/auth?role=student');
+      const isOfflineSession = localStorage.getItem('offlineSessionActive') === 'true';
+      const hasOfflineData = offlineData !== null;
+      
+      if (!isOnline && isOfflineSession && hasOfflineData) {
+        // Allow offline session
+        setOfflineSession(true);
+      } else if (isOnline || !hasOfflineData) {
+        navigate('/auth?role=student');
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, isOnline, offlineData]);
+
+  // Auto-sync when coming back online
+  useEffect(() => {
+    if (isOnline && offlineSession) {
+      // Clear offline session flag when back online with a real session
+      if (user) {
+        localStorage.removeItem('offlineSessionActive');
+        setOfflineSession(false);
+      }
+    }
+  }, [isOnline, user, offlineSession]);
 
   const handleLogout = async () => {
-    await signOut();
+    localStorage.removeItem('offlineSessionActive');
+    if (user) {
+      await signOut();
+    }
     navigate('/');
   };
 
-  if (authLoading) {
+  // Get display name - from profile (online) or offline data
+  const displayName = profile?.full_name || offlineData?.name || t('student');
+
+  if (authLoading && !offlineSession) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -57,8 +96,20 @@ export default function StudentDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Offline Login Banner */}
+      {offlineSession && (
+        <Alert className="rounded-none border-x-0 border-t-0 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800">
+          <WifiOff className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-amber-800 dark:text-amber-200">
+            {preferredLanguage === 'hi' 
+              ? 'ऑफलाइन मोड: सहेजी गई एक्सेस से लॉगिन'
+              : 'Offline Mode: Logged in using saved access'}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {/* Offline Streak Banner - Show when offline */}
-      {!isOnline && streakCount > 0 && (
+      {!streakOnline && streakCount > 0 && !offlineSession && (
         <div className="bg-amber-50 dark:bg-amber-950 border-b border-amber-200 dark:border-amber-800 px-4 py-2 text-center text-sm text-amber-700 dark:text-amber-300">
           {t('offlineStreakSaved')}
         </div>
@@ -93,7 +144,7 @@ export default function StudentDashboard() {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {t('welcome')}, {profile?.full_name || t('student')} ({t('student')})
+                  {t('welcome')}, {displayName} ({t('student')})
                 </p>
                 {/* Streak broken notification */}
                 {streakBroken && (

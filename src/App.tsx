@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import Install from "./pages/Install";
 import NotFound from "./pages/NotFound";
+import { StudentLayout } from "./components/StudentLayout";
 
 const queryClient = new QueryClient();
 
@@ -29,16 +30,21 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/student" element={<StudentDashboard />} />
-          <Route path="/student/ebooks" element={<StudentEbooks />} />
-          <Route path="/student/content" element={<StudentContent />} />
-          <Route path="/student/quizzes" element={<StudentQuizzes />} />
-          <Route path="/student/career" element={<StudentCareer />} />
-          <Route path="/student/study-tools" element={<StudentStudyTools />} />
-          <Route path="/student/setu-saarthi" element={<SetuSaarthi />} />
+          
+          {/* Student routes with global chatbot */}
+          <Route element={<StudentLayout />}>
+            <Route path="/student" element={<StudentDashboard />} />
+            <Route path="/student/ebooks" element={<StudentEbooks />} />
+            <Route path="/student/content" element={<StudentContent />} />
+            <Route path="/student/quizzes" element={<StudentQuizzes />} />
+            <Route path="/student/career" element={<StudentCareer />} />
+            <Route path="/student/study-tools" element={<StudentStudyTools />} />
+            <Route path="/student/setu-saarthi" element={<SetuSaarthi />} />
+            <Route path="/settings" element={<ProfileSettings />} />
+          </Route>
+          
           <Route path="/teacher" element={<TeacherDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/settings" element={<ProfileSettings />} />
           <Route path="/install" element={<Install />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

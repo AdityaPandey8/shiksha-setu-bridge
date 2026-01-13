@@ -30,8 +30,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-// Storage keys
-const CHATBOT_HIDDEN_KEY = 'shiksha_setu_chatbot_hidden';
+// Storage keys - messages only, dismissal is session-based
 const CHATBOT_MESSAGES_KEY = 'shiksha_setu_global_chat';
 
 interface Message {
@@ -78,9 +77,8 @@ export function GlobalSetuSaarthi() {
   const { isHindi, t } = useLanguage();
   const isMobile = useIsMobile();
   
-  const [isHidden, setIsHidden] = useState(() => {
-    return localStorage.getItem(CHATBOT_HIDDEN_KEY) === 'true';
-  });
+  // Session-only dismissal state (resets on refresh)
+  const [isHidden, setIsHidden] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -301,16 +299,15 @@ export function GlobalSetuSaarthi() {
     navigate('/student/setu-saarthi');
   };
 
-  // Hide chatbot (dismiss)
+  // Hide chatbot for current session only (no localStorage)
   const hideChatbot = () => {
-    localStorage.setItem(CHATBOT_HIDDEN_KEY, 'true');
     setIsHidden(true);
     setIsOpen(false);
     toast({
       title: isHindi ? 'चैटबॉट छिपाया गया' : 'Chatbot Hidden',
       description: isHindi 
-        ? 'सेटिंग्स में जाकर इसे फिर से सक्षम करें' 
-        : 'Go to Settings to enable it again',
+        ? 'पेज रिफ्रेश करने पर वापस आ जाएगा' 
+        : 'Will reappear on page refresh',
     });
   };
 

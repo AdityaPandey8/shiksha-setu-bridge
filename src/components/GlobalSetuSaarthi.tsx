@@ -6,24 +6,25 @@
  * 
  * Features:
  * - Persistent across navigation (mounted at layout level)
- * - Dismissible with localStorage persistence
+ * - Swipe-to-dismiss gesture (session-only, reappears on refresh)
+ * - Quick actions via long-press menu
  * - Lazy loads chat UI only when opened
  * - Works in both offline and online modes
  * - Accessible with keyboard and screen reader support
  */
 
-import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Bot, Send, X, Wifi, WifiOff, Loader2, 
-  Trash2, Sparkles, ArrowLeft, GripHorizontal
+  Trash2, Sparkles, BookOpen, Brain, Target, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -33,12 +34,60 @@ import { useIsMobile } from '@/hooks/use-mobile';
 // Storage keys - messages only, dismissal is session-based
 const CHATBOT_MESSAGES_KEY = 'shiksha_setu_global_chat';
 
+// Swipe threshold (40% of screen width)
+const SWIPE_THRESHOLD_PERCENT = 0.4;
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
+
+interface QuickAction {
+  id: string;
+  icon: React.ReactNode;
+  labelEn: string;
+  labelHi: string;
+  promptEn: string;
+  promptHi: string;
+}
+
+// Quick actions for fast help
+const QUICK_ACTIONS: QuickAction[] = [
+  {
+    id: 'explain',
+    icon: <BookOpen className="h-4 w-4" />,
+    labelEn: 'Explain topic',
+    labelHi: 'विषय समझाएं',
+    promptEn: 'Please explain this topic to me in simple terms.',
+    promptHi: 'कृपया इस विषय को सरल शब्दों में समझाएं।',
+  },
+  {
+    id: 'doubt',
+    icon: <Brain className="h-4 w-4" />,
+    labelEn: 'Ask a doubt',
+    labelHi: 'प्रश्न पूछें',
+    promptEn: 'I have a doubt about my studies. Can you help?',
+    promptHi: 'मुझे पढ़ाई में एक संदेह है। क्या आप मदद कर सकते हैं?',
+  },
+  {
+    id: 'career',
+    icon: <Target className="h-4 w-4" />,
+    labelEn: 'Career guidance',
+    labelHi: 'करियर मार्गदर्शन',
+    promptEn: 'I need career guidance. What are my options after class 10/12?',
+    promptHi: 'मुझे करियर मार्गदर्शन चाहिए। 10वीं/12वीं के बाद मेरे पास क्या विकल्प हैं?',
+  },
+  {
+    id: 'quiz',
+    icon: <HelpCircle className="h-4 w-4" />,
+    labelEn: 'Quiz help',
+    labelHi: 'क्विज़ मदद',
+    promptEn: 'Help me prepare for quizzes. Give me some practice questions.',
+    promptHi: 'क्विज़ की तैयारी में मदद करें। कुछ अभ्यास प्रश्न दें।',
+  },
+];
 
 // FAQ Knowledge Base (subset for quick responses)
 const FAQ_RESPONSES: Record<string, { keywords: string[]; en: string; hi: string }> = {
@@ -74,7 +123,7 @@ export function GlobalSetuSaarthi() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
-  const { isHindi, t } = useLanguage();
+  const { isHindi } = useLanguage();
   const isMobile = useIsMobile();
   
   // Session-only dismissal state (resets on refresh)
@@ -83,7 +132,16 @@ export function GlobalSetuSaarthi() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Quick actions menu state
+  const [showQuickActions, setShowQuickActions] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  
+  // Swipe gesture state
+  const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const buttonRef = useRef<HTMLDivElement>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -91,11 +149,6 @@ export function GlobalSetuSaarthi() {
   // Only show on student routes
   const isStudentRoute = location.pathname.startsWith('/student') || location.pathname === '/settings';
   
-  // Don't render if hidden or not on student route
-  if (isHidden || !isStudentRoute) {
-    return null;
-  }
-
   // Load messages from localStorage on mount
   useEffect(() => {
     try {
@@ -148,6 +201,15 @@ export function GlobalSetuSaarthi() {
       setMessages([welcomeMessage]);
     }
   }, [isOpen, messages.length, isOnline, isHindi]);
+
+  // Close quick actions when clicking outside
+  useEffect(() => {
+    if (showQuickActions) {
+      const handleClickOutside = () => setShowQuickActions(false);
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showQuickActions]);
 
   // Generate offline response
   const generateOfflineResponse = useCallback((userMessage: string): string => {
@@ -236,13 +298,14 @@ export function GlobalSetuSaarthi() {
   }, [isHindi]);
 
   // Handle send message
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (messageText?: string) => {
+    const textToSend = messageText || input.trim();
+    if (!textToSend || isLoading) return;
 
     const userMessage: Message = {
       id: `user_${Date.now()}`,
       role: 'user',
-      content: input.trim(),
+      content: textToSend,
       timestamp: new Date(),
     };
 
@@ -287,6 +350,16 @@ export function GlobalSetuSaarthi() {
     }
   };
 
+  // Handle quick action selection
+  const handleQuickAction = (action: QuickAction) => {
+    setShowQuickActions(false);
+    setIsOpen(true);
+    // Send the pre-filled prompt after a short delay
+    setTimeout(() => {
+      handleSend(isHindi ? action.promptHi : action.promptEn);
+    }, 300);
+  };
+
   // Clear chat history
   const clearChat = () => {
     setMessages([]);
@@ -303,6 +376,7 @@ export function GlobalSetuSaarthi() {
   const hideChatbot = () => {
     setIsHidden(true);
     setIsOpen(false);
+    setShowQuickActions(false);
     toast({
       title: isHindi ? 'चैटबॉट छिपाया गया' : 'Chatbot Hidden',
       description: isHindi 
@@ -310,6 +384,131 @@ export function GlobalSetuSaarthi() {
         : 'Will reappear on page refresh',
     });
   };
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+    dragStartX.current = e.touches[0].clientX;
+    setIsDragging(true);
+    
+    // Start long press timer for quick actions
+    longPressTimer.current = setTimeout(() => {
+      setShowQuickActions(true);
+      setIsDragging(false);
+    }, 500);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    
+    // Cancel long press if moving
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    const currentX = e.touches[0].clientX;
+    const deltaX = currentX - dragStartX.current;
+    setDragX(deltaX);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    setIsDragging(false);
+    
+    // Check if swipe threshold exceeded
+    const screenWidth = window.innerWidth;
+    const threshold = screenWidth * SWIPE_THRESHOLD_PERCENT;
+    
+    if (Math.abs(dragX) > threshold) {
+      // Animate off-screen and hide
+      setDragX(dragX > 0 ? screenWidth : -screenWidth);
+      setTimeout(hideChatbot, 200);
+    } else {
+      // Reset position
+      setDragX(0);
+    }
+  };
+
+  // Mouse events for desktop drag
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+    dragStartX.current = e.clientX;
+    setIsDragging(true);
+    
+    // Start long press timer for quick actions
+    longPressTimer.current = setTimeout(() => {
+      setShowQuickActions(true);
+      setIsDragging(false);
+    }, 500);
+    
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging) return;
+    
+    // Cancel long press if moving
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    const deltaX = e.clientX - dragStartX.current;
+    setDragX(deltaX);
+  };
+
+  const handleMouseUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    
+    setIsDragging(false);
+    
+    // Check if swipe threshold exceeded
+    const screenWidth = window.innerWidth;
+    const threshold = screenWidth * SWIPE_THRESHOLD_PERCENT;
+    
+    if (Math.abs(dragX) > threshold) {
+      setDragX(dragX > 0 ? screenWidth : -screenWidth);
+      setTimeout(hideChatbot, 200);
+    } else {
+      setDragX(0);
+    }
+  };
+
+  // Add/remove mouse listeners
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragX]);
+
+  // Handle button click (only if not dragging)
+  const handleButtonClick = () => {
+    if (Math.abs(dragX) < 5 && !showQuickActions) {
+      setIsOpen(true);
+    }
+  };
+
+  // Don't render if hidden or not on student route
+  if (isHidden || !isStudentRoute) {
+    return null;
+  }
 
   // Chat content (shared between mobile and desktop)
   const ChatContent = () => (
@@ -407,7 +606,7 @@ export function GlobalSetuSaarthi() {
             disabled={isLoading}
             className="flex-1"
           />
-          <Button onClick={handleSend} disabled={isLoading || !input.trim()} size="icon">
+          <Button onClick={() => handleSend()} disabled={isLoading || !input.trim()} size="icon">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
@@ -415,40 +614,70 @@ export function GlobalSetuSaarthi() {
     </div>
   );
 
-  // Floating button
+  // Floating button with swipe and quick actions
   const FloatingButton = () => (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
-      {/* Close/Hide button */}
-      <Button
-        variant="secondary"
-        size="icon"
-        className="h-8 w-8 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={hideChatbot}
-        aria-label={isHindi ? 'चैटबॉट छिपाएं' : 'Hide chatbot'}
-      >
-        <X className="h-4 w-4" />
-      </Button>
-      
-      {/* Main button */}
+    <div 
+      ref={buttonRef}
+      className="fixed bottom-4 right-4 z-[9999] select-none"
+      style={{
+        transform: `translateX(${dragX}px)`,
+        transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+      }}
+    >
+      {/* Quick Actions Menu */}
+      {showQuickActions && (
+        <div 
+          className="absolute bottom-16 right-0 bg-background border rounded-lg shadow-xl p-2 min-w-[180px] animate-in fade-in zoom-in-95 duration-200"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="text-xs text-muted-foreground px-2 py-1 mb-1">
+            {isHindi ? 'त्वरित कार्य' : 'Quick Actions'}
+          </div>
+          {QUICK_ACTIONS.map((action) => (
+            <button
+              key={action.id}
+              onClick={() => handleQuickAction(action)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-muted transition-colors text-left"
+            >
+              {action.icon}
+              <span>{isHindi ? action.labelHi : action.labelEn}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Main Button */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            className="h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 group relative"
-            size="icon"
+          <button
+            className={`h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center relative cursor-grab active:cursor-grabbing touch-none ${
+              isDragging ? 'scale-105' : ''
+            }`}
+            style={{ transition: isDragging ? 'none' : 'transform 0.1s ease-out' }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onMouseDown={handleMouseDown}
+            onClick={handleButtonClick}
             aria-label={isHindi ? 'लर्निंग असिस्टेंट खोलें' : 'Open learning assistant'}
           >
             <Bot className="h-6 w-6" />
             {/* Close icon on hover */}
             <span 
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
               onClick={(e) => { e.stopPropagation(); hideChatbot(); }}
             >
               <X className="h-3 w-3" />
             </span>
-          </Button>
+          </button>
         </TooltipTrigger>
         <TooltipContent side="left">
-          {isHindi ? 'सेतु सारथी से पूछें' : 'Ask Setu Saarthi'}
+          <div className="text-center">
+            <div>{isHindi ? 'सेतु सारथी से पूछें' : 'Ask Setu Saarthi'}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {isHindi ? 'दबाकर रखें: त्वरित कार्य' : 'Hold: Quick actions'}
+            </div>
+          </div>
         </TooltipContent>
       </Tooltip>
     </div>
@@ -457,32 +686,32 @@ export function GlobalSetuSaarthi() {
   // Mobile: Full-screen dialog
   if (isMobile) {
     return (
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogTrigger asChild>
-          <FloatingButton />
-        </DialogTrigger>
-        <DialogContent className="max-w-full h-[100dvh] p-0 gap-0 sm:rounded-none">
-          <DialogHeader className="sr-only">
-            <DialogTitle>Setu Saarthi</DialogTitle>
-          </DialogHeader>
-          <ChatContent />
-        </DialogContent>
-      </Dialog>
+      <>
+        <FloatingButton />
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogContent className="max-w-full h-[100dvh] p-0 gap-0 sm:rounded-none">
+            <DialogHeader className="sr-only">
+              <DialogTitle>Setu Saarthi</DialogTitle>
+            </DialogHeader>
+            <ChatContent />
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
   // Desktop: Sliding sheet from right
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <FloatingButton />
-      </SheetTrigger>
-      <SheetContent side="right" className="w-[400px] sm:w-[450px] p-0">
-        <SheetHeader className="sr-only">
-          <SheetTitle>Setu Saarthi</SheetTitle>
-        </SheetHeader>
-        <ChatContent />
-      </SheetContent>
-    </Sheet>
+    <>
+      <FloatingButton />
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetContent side="right" className="w-[400px] sm:w-[450px] p-0">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Setu Saarthi</SheetTitle>
+          </SheetHeader>
+          <ChatContent />
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

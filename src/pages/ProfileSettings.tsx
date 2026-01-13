@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Lock, Bell, LogOut, Loader2, Save, WifiOff, Bot } from 'lucide-react';
+import { ArrowLeft, User, Lock, Bell, LogOut, Loader2, Save, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,8 +12,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { supabase } from '@/integrations/supabase/client';
-
-const CHATBOT_HIDDEN_KEY = 'shiksha_setu_chatbot_hidden';
 
 /**
  * Profile & Settings Page
@@ -32,7 +30,6 @@ const PENDING_PASSWORD_KEY = 'shiksha_setu_pending_password';
 
 interface UserSettings {
   emailNotifications: boolean;
-  chatbotEnabled: boolean;
 }
 
 export default function ProfileSettings() {
@@ -47,15 +44,8 @@ export default function ProfileSettings() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [settings, setSettings] = useState<UserSettings>({
     emailNotifications: true,
-    chatbotEnabled: true,
   });
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
-
-  // Initialize chatbot setting from localStorage
-  useEffect(() => {
-    const chatbotHidden = localStorage.getItem(CHATBOT_HIDDEN_KEY) === 'true';
-    setSettings(prev => ({ ...prev, chatbotEnabled: !chatbotHidden }));
-  }, []);
 
   // Load settings from localStorage
   useEffect(() => {
@@ -180,25 +170,6 @@ export default function ProfileSettings() {
     toast({
       title: t('settingsSaved'),
       description: enabled ? t('notificationsEnabled') : t('notificationsDisabled'),
-    });
-  };
-
-  const handleChatbotToggle = (enabled: boolean) => {
-    const newSettings = { ...settings, chatbotEnabled: enabled };
-    setSettings(newSettings);
-    
-    // Update localStorage for chatbot visibility
-    if (enabled) {
-      localStorage.removeItem(CHATBOT_HIDDEN_KEY);
-    } else {
-      localStorage.setItem(CHATBOT_HIDDEN_KEY, 'true');
-    }
-    
-    toast({
-      title: t('settingsSaved'),
-      description: enabled 
-        ? 'Setu Saarthi chatbot enabled'
-        : 'Setu Saarthi chatbot disabled',
     });
   };
 
@@ -382,35 +353,6 @@ export default function ProfileSettings() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Setu Saarthi Chatbot Card - Only for students */}
-          {role === 'student' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5" />
-                  Setu Saarthi
-                </CardTitle>
-                <CardDescription>
-                  Control the floating learning assistant
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Enable Chatbot</p>
-                    <p className="text-sm text-muted-foreground">
-                      Show floating Setu Saarthi button on all pages
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings.chatbotEnabled}
-                    onCheckedChange={handleChatbotToggle}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Logout Card */}
           <Card className="border-destructive/50">

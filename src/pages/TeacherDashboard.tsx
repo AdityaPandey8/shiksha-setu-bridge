@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -672,27 +672,41 @@ export default function TeacherDashboard() {
                           <TableCell>{t('class')} {item.class}</TableCell>
                           <TableCell className="capitalize">{item.language === 'hindi' ? t('hindi') : t('english')}</TableCell>
                           <TableCell className="text-right">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t('deleteContent')}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t('deleteContentConfirm')}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteContent(item.id)}>
-                                    {t('delete')}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <div className="flex items-center justify-end gap-1">
+                              {/* View Full Screen Button */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/teacher/content/${item.id}`)}
+                                title="View Full Screen"
+                                className="text-primary hover:text-primary"
+                              >
+                                <Maximize2 className="h-4 w-4" />
+                              </Button>
+                              
+                              {/* Delete Button */}
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>{t('deleteContent')}</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      {t('deleteContentConfirm')}
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteContent(item.id)}>
+                                      {t('delete')}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))}

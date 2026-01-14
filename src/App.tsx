@@ -8,11 +8,13 @@ import Auth from "./pages/Auth";
 import StudentDashboard from "./pages/StudentDashboard";
 import StudentEbooks from "./pages/StudentEbooks";
 import StudentContent from "./pages/StudentContent";
+import StudentContentView from "./pages/StudentContentView";
 import StudentQuizzes from "./pages/StudentQuizzes";
 import StudentCareer from "./pages/StudentCareer";
 import StudentStudyTools from "./pages/StudentStudyTools";
 import SetuSaarthi from "./pages/SetuSaarthi";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import TeacherContentView from "./pages/TeacherContentView";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProfileSettings from "./pages/ProfileSettings";
 import Install from "./pages/Install";
@@ -31,11 +33,12 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           
-          {/* Student routes with global chatbot */}
+          {/* Student routes with layout */}
           <Route element={<StudentLayout />}>
             <Route path="/student" element={<StudentDashboard />} />
             <Route path="/student/ebooks" element={<StudentEbooks />} />
             <Route path="/student/content" element={<StudentContent />} />
+            <Route path="/student/content/:contentId" element={<StudentContentView />} />
             <Route path="/student/quizzes" element={<StudentQuizzes />} />
             <Route path="/student/career" element={<StudentCareer />} />
             <Route path="/student/study-tools" element={<StudentStudyTools />} />
@@ -43,7 +46,10 @@ const App = () => (
             <Route path="/settings" element={<ProfileSettings />} />
           </Route>
           
+          {/* Teacher routes */}
           <Route path="/teacher" element={<TeacherDashboard />} />
+          <Route path="/teacher/content/:contentId" element={<TeacherContentView />} />
+          
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/install" element={<Install />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

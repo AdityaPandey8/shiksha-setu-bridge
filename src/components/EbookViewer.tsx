@@ -10,6 +10,7 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useToast } from '@/hooks/use-toast';
 import { StudyToolsFloating } from '@/components/StudyToolsFloating';
+import { InteractiveTextViewer } from '@/components/InteractiveTextViewer';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PdfEbook {
@@ -241,11 +242,14 @@ export function EbookViewer() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Chapter Content */}
+            {/* Chapter Content with Interactive Study Tools */}
             <div className="prose prose-sm max-w-none dark:prose-invert">
-              <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-                {selectedChapter.content}
-              </div>
+              <InteractiveTextViewer
+                contentId={`${selectedEbook.id}-${selectedChapter.id}`}
+                contentType="ebook"
+                content={selectedChapter.content}
+                contentTitle={`${selectedEbook.title} - ${selectedChapter.title}`}
+              />
             </div>
 
             {/* Activities */}

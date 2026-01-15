@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowLeft, Video, FileText, File, Maximize2, WifiOff, ZoomIn, ZoomOut, Type, Image as ImageIcon, Download, X, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { textToHtml } from '@/lib/sanitize';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
@@ -362,7 +363,7 @@ export function FullScreenContentViewer({
                 {articleContent && (
                   <div 
                     className="text-foreground leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: articleContent.replace(/\n/g, '<br />') }}
+                    dangerouslySetInnerHTML={{ __html: textToHtml(articleContent) }}
                   />
                 )}
                 {displayContent.url && (

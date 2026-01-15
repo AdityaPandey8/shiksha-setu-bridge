@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2, Pencil, Image as ImageIcon } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2, Pencil, Image as ImageIcon, FileText, Video, Link } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +26,7 @@ import { EbookManager } from '@/components/EbookManager';
 import { EbookPdfManager } from '@/components/EbookPdfManager';
 import { useEbookStorage } from '@/hooks/useEbookStorage';
 import { ChatbotSummaryManager } from '@/components/ChatbotSummaryManager';
+import { ContentFileUpload } from '@/components/ContentFileUpload';
 
 interface ContentItem {
   id: string;
@@ -675,40 +676,66 @@ export default function TeacherDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
-                        {(contentType === 'video' || contentType === 'pdf') && (
+                        {/* Dynamic fields based on content type */}
+                        {contentType === 'video' && (
                           <div className="space-y-2">
-                            <Label htmlFor="url">{contentType === 'video' ? 'Video URL (YouTube or direct)' : 'PDF URL'}</Label>
+                            <Label htmlFor="url">Video URL (YouTube or direct link)</Label>
                             <Input
                               id="url"
                               type="url"
                               value={contentUrl}
                               onChange={(e) => setContentUrl(e.target.value)}
-                              placeholder="https://example.com/resource"
+                              placeholder="https://youtube.com/watch?v=... or direct video URL"
+                              required
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Videos are streamed online only and cannot be downloaded for offline use.
+                            </p>
                           </div>
                         )}
+                        
                         {contentType === 'image' && (
                           <div className="space-y-2">
-                            <Label htmlFor="imageUrl">Image URL</Label>
-                            <Input
-                              id="imageUrl"
-                              type="url"
+                            <Label>Upload Image</Label>
+                            <ContentFileUpload
+                              type="image"
                               value={contentImageUrl}
-                              onChange={(e) => setContentImageUrl(e.target.value)}
-                              placeholder="https://example.com/image.jpg"
+                              onChange={(url) => setContentImageUrl(url || '')}
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Images can be downloaded by students for offline viewing.
+                            </p>
                           </div>
                         )}
+                        
+                        {contentType === 'pdf' && (
+                          <div className="space-y-2">
+                            <Label>Upload PDF</Label>
+                            <ContentFileUpload
+                              type="pdf"
+                              value={contentUrl}
+                              onChange={(url) => setContentUrl(url || '')}
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              PDFs can be downloaded by students for offline viewing.
+                            </p>
+                          </div>
+                        )}
+                        
                         {contentType === 'article' && (
                           <div className="space-y-2">
-                            <Label htmlFor="articleBody">Article Body</Label>
+                            <Label htmlFor="articleBody">Article Body *</Label>
                             <Textarea
                               id="articleBody"
                               value={contentArticleBody}
                               onChange={(e) => setContentArticleBody(e.target.value)}
-                              placeholder="Write the full article content here..."
-                              rows={6}
+                              placeholder="Write the full article content here. Students can highlight, underline, and add notes to this text."
+                              rows={8}
+                              required
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Articles support offline access and interactive study tools (highlight, underline, doubts, flashcards).
+                            </p>
                           </div>
                         )}
                         <Button type="submit" className="w-full" disabled={submittingContent}>
@@ -741,7 +768,19 @@ export default function TeacherDashboard() {
                         <TableRow key={item.id}>
                           <TableCell className="font-medium">{item.title}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="capitalize">
+                            <Badge 
+                              variant="outline" 
+                              className={`capitalize flex items-center gap-1 w-fit ${
+                                item.content_type === 'article' ? 'text-blue-600 border-blue-200' :
+                                item.content_type === 'video' ? 'text-red-600 border-red-200' :
+                                item.content_type === 'pdf' ? 'text-orange-600 border-orange-200' :
+                                'text-green-600 border-green-200'
+                              }`}
+                            >
+                              {item.content_type === 'article' && <FileText className="h-3 w-3" />}
+                              {item.content_type === 'video' && <Video className="h-3 w-3" />}
+                              {item.content_type === 'pdf' && <FileText className="h-3 w-3" />}
+                              {item.content_type === 'image' && <ImageIcon className="h-3 w-3" />}
                               {item.content_type === 'video' ? t('video') : item.content_type === 'article' ? t('article') : item.content_type === 'image' ? 'Image' : t('pdf')}
                             </Badge>
                           </TableCell>

@@ -18,15 +18,15 @@ import { supabase } from '@/integrations/supabase/client';
  * 
  * Features:
  * - View user details (read-only)
- * - Change password (offline-first)
+ * - Change password (online only for security)
  * - Email notifications toggle (demo)
  * - Logout functionality
  * 
- * Works in both OFFLINE and ONLINE modes.
+ * SECURITY: Password changes are NOT stored offline to prevent
+ * plain-text password storage vulnerabilities.
  */
 
 const SETTINGS_STORAGE_KEY = 'shiksha_setu_user_settings';
-const PENDING_PASSWORD_KEY = 'shiksha_setu_pending_password';
 
 interface UserSettings {
   emailNotifications: boolean;
@@ -45,7 +45,6 @@ export default function ProfileSettings() {
   const [settings, setSettings] = useState<UserSettings>({
     emailNotifications: true,
   });
-  const [hasPendingChanges, setHasPendingChanges] = useState(false);
 
   // Load settings from localStorage
   useEffect(() => {
@@ -57,20 +56,7 @@ export default function ProfileSettings() {
         // Use defaults
       }
     }
-
-    // Check for pending password change
-    const pendingPassword = localStorage.getItem(PENDING_PASSWORD_KEY);
-    if (pendingPassword) {
-      setHasPendingChanges(true);
-    }
   }, []);
-
-  // Auto-sync pending password when online
-  useEffect(() => {
-    if (isOnline && hasPendingChanges) {
-      syncPendingPassword();
-    }
-  }, [isOnline, hasPendingChanges]);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -79,31 +65,18 @@ export default function ProfileSettings() {
     }
   }, [user, authLoading, navigate]);
 
-  const syncPendingPassword = async () => {
-    const pendingPassword = localStorage.getItem(PENDING_PASSWORD_KEY);
-    if (!pendingPassword) return;
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: pendingPassword,
-      });
-
-      if (error) throw error;
-
-      localStorage.removeItem(PENDING_PASSWORD_KEY);
-      setHasPendingChanges(false);
-      
-      toast({
-        title: t('passwordSynced'),
-        description: t('passwordSyncedDesc'),
-      });
-    } catch (error) {
-      console.error('Error syncing password:', error);
-    }
-  };
-
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Password changes require online connection for security
+    if (!isOnline) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: 'Password changes require an internet connection for security.',
+      });
+      return;
+    }
 
     if (newPassword.length < 6) {
       toast({
@@ -125,41 +98,29 @@ export default function ProfileSettings() {
 
     setSavingPassword(true);
 
-    if (isOnline) {
-      try {
-        const { error } = await supabase.auth.updateUser({
-          password: newPassword,
-        });
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: t('success'),
-          description: t('passwordUpdated'),
-        });
-        setNewPassword('');
-        setConfirmPassword('');
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: t('error'),
-          description: error.message || t('passwordUpdateFailed'),
-        });
-      }
-    } else {
-      // Save to localStorage for later sync
-      localStorage.setItem(PENDING_PASSWORD_KEY, newPassword);
-      setHasPendingChanges(true);
-      
       toast({
-        title: t('passwordSavedOffline'),
-        description: t('passwordWillSyncOnline'),
+        title: t('success'),
+        description: t('passwordUpdated'),
       });
       setNewPassword('');
       setConfirmPassword('');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : t('passwordUpdateFailed');
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: errorMessage,
+      });
+    } finally {
+      setSavingPassword(false);
     }
-
-    setSavingPassword(false);
   };
 
   const handleNotificationToggle = (enabled: boolean) => {
@@ -244,12 +205,6 @@ export default function ProfileSettings() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
-        {/* Pending Changes Alert */}
-        {hasPendingChanges && (
-          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg text-sm text-amber-700 dark:text-amber-300">
-            {t('pendingChangesWillSync')}
-          </div>
-        )}
 
         <div className="space-y-6">
           {/* User Details Card */}

@@ -89,6 +89,63 @@ export interface UserPreferences {
   updatedAt: Date;
 }
 
+// Study tools interfaces
+export interface TextHighlight {
+  id: string;
+  contentId: string;
+  contentType: 'content' | 'ebook';
+  selectedText: string;
+  color: 'yellow' | 'green' | 'blue';
+  startOffset: number;
+  endOffset: number;
+  createdAt: Date;
+}
+
+export interface TextUnderline {
+  id: string;
+  contentId: string;
+  contentType: 'content' | 'ebook';
+  selectedText: string;
+  startOffset: number;
+  endOffset: number;
+  createdAt: Date;
+}
+
+export interface StudyBookmark {
+  id: string;
+  contentId: string;
+  contentType: 'content' | 'ebook';
+  title: string;
+  note?: string;
+  pageNumber?: number;
+  chapterId?: string;
+  createdAt: Date;
+}
+
+export interface StudyDoubt {
+  id: string;
+  contentId: string;
+  contentType: 'content' | 'ebook';
+  question: string;
+  selectedText?: string;
+  note?: string;
+  resolved: boolean;
+  answer?: string;
+  createdAt: Date;
+}
+
+export interface StudyFlashcard {
+  id: string;
+  contentId: string;
+  contentType: 'content' | 'ebook';
+  front: string;
+  back: string;
+  selectedText?: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  lastReviewed?: Date;
+  createdAt: Date;
+}
+
 // Create Dexie database
 class ShikshaStuDB extends Dexie {
   ebooks!: Table<CachedEbook, string>;
@@ -99,6 +156,11 @@ class ShikshaStuDB extends Dexie {
   offlineProgress!: Table<OfflineProgress, string>;
   offlineQuizScores!: Table<OfflineQuizScore, string>;
   userPreferences!: Table<UserPreferences, string>;
+  highlights!: Table<TextHighlight, string>;
+  underlines!: Table<TextUnderline, string>;
+  studyBookmarks!: Table<StudyBookmark, string>;
+  studyDoubts!: Table<StudyDoubt, string>;
+  studyFlashcards!: Table<StudyFlashcard, string>;
 
   constructor() {
     super('ShikshaSetuDB');
@@ -124,6 +186,23 @@ class ShikshaStuDB extends Dexie {
       offlineProgress: 'id, contentId, pendingSync, syncedAt',
       offlineQuizScores: 'id, quizId, pendingSync, syncedAt, attemptedAt',
       userPreferences: 'key, updatedAt'
+    });
+
+    // Version 3: Add study tools tables
+    this.version(3).stores({
+      ebooks: 'id, subject, class, language, cachedAt, lastAccessed',
+      quizzes: 'id, class, language, cachedAt',
+      content: 'id, contentType, class, language, cachedAt, lastAccessed, version',
+      careerData: 'id, type, language, cachedAt',
+      chatbotSummaries: 'id, chapterId, subject, class, language, cachedAt',
+      offlineProgress: 'id, contentId, pendingSync, syncedAt',
+      offlineQuizScores: 'id, quizId, pendingSync, syncedAt, attemptedAt',
+      userPreferences: 'key, updatedAt',
+      highlights: 'id, contentId, contentType, createdAt',
+      underlines: 'id, contentId, contentType, createdAt',
+      studyBookmarks: 'id, contentId, contentType, createdAt',
+      studyDoubts: 'id, contentId, contentType, resolved, createdAt',
+      studyFlashcards: 'id, contentId, contentType, difficulty, createdAt'
     });
   }
 }

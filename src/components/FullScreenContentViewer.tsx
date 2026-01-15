@@ -4,15 +4,25 @@
  * A distraction-free, full-screen content viewing experience.
  * Supports videos, articles, PDFs, and images with responsive rendering.
  * Works offline if content is cached.
+ * 
+ * Includes study tools:
+ * - Text highlighting (yellow, green, blue)
+ * - Text underlining
+ * - Bookmarks
+ * - Doubts
+ * - Flashcards
  */
 
-import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Video, FileText, File, Maximize2, WifiOff, ZoomIn, ZoomOut, Type, Image as ImageIcon, Download, X, RotateCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ArrowLeft, Video, FileText, File, Maximize2, WifiOff, ZoomIn, ZoomOut, Type, Image as ImageIcon, Download, X, RotateCw, Bookmark } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { InteractiveTextViewer } from '@/components/InteractiveTextViewer';
+import { ContentBookmarkButton } from '@/components/ContentBookmarkButton';
+import { StudyToolsFloating } from '@/components/StudyToolsFloating';
 
 export interface ContentData {
   id: string;
@@ -319,7 +329,7 @@ export function FullScreenContentViewer({
       );
     }
 
-    // Article
+    // Article - with interactive study tools
     if (contentType === 'article') {
       const articleContent = displayContent.article_body || displayContent.description;
 
@@ -360,9 +370,12 @@ export function FullScreenContentViewer({
               >
                 <h1 className="text-2xl md:text-3xl font-bold mb-6">{displayContent.title}</h1>
                 {articleContent && (
-                  <div 
-                    className="text-foreground leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: articleContent.replace(/\n/g, '<br />') }}
+                  <InteractiveTextViewer
+                    contentId={displayContent.id}
+                    contentType="content"
+                    content={articleContent}
+                    contentTitle={displayContent.title}
+                    style={{ fontSize: `${fontSize}px` }}
                   />
                 )}
                 {displayContent.url && (
@@ -455,6 +468,14 @@ export function FullScreenContentViewer({
             </Button>
             
             <div className="flex items-center gap-2">
+              {/* Bookmark Button - for articles only */}
+              {displayContent.content_type === 'article' && (
+                <ContentBookmarkButton
+                  contentId={displayContent.id}
+                  contentType="content"
+                  title={displayContent.title}
+                />
+              )}
               {isOffline && (
                 <Badge variant="secondary" className="gap-1">
                   <WifiOff className="h-3 w-3" />
@@ -489,6 +510,16 @@ export function FullScreenContentViewer({
       <main className="flex-1 overflow-auto p-4 md:p-6">
         {renderContent()}
       </main>
+
+      {/* Floating Study Tools - for articles only */}
+      {displayContent.content_type === 'article' && (
+        <StudyToolsFloating
+          context={{
+            type: 'content',
+            title: displayContent.title,
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -200,7 +200,6 @@ export default function StudentContent() {
                 description={item.description}
                 url={item.url}
                 contentType={item.content_type}
-                contentClass={item.class}
                 language={item.language}
                 articleBody={item.article_body}
                 imageUrl={item.image_url}

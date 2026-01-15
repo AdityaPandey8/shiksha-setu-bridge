@@ -25,7 +25,6 @@ interface ContentCardProps {
   description?: string | null;
   url?: string | null;
   contentType: 'video' | 'article' | 'pdf' | 'image';
-  contentClass: string;
   language: 'hindi' | 'english';
   articleBody?: string | null;
   imageUrl?: string | null;
@@ -52,7 +51,6 @@ export function ContentCard({
   description,
   url,
   contentType,
-  contentClass,
   language,
   articleBody,
   imageUrl,
@@ -84,7 +82,7 @@ export function ContentCard({
       description: description ?? null,
       url: url ?? null,
       content_type: contentType,
-      class: contentClass,
+      class: '', // Will be filled by server data
       language,
       article_body: articleBody,
       image_url: imageUrl,

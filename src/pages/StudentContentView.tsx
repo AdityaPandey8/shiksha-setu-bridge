@@ -6,7 +6,7 @@
  * 
  * Features:
  * - Distraction-free viewing
- * - Offline support with cached content
+ * - Offline support with cached content from IndexedDB
  * - Mobile-first design
  * - Back navigation preserves scroll position
  */
@@ -15,18 +15,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
-import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useContentStorage } from '@/hooks/useContentStorage';
 import { supabase } from '@/integrations/supabase/client';
-import { FullScreenContentViewer, ContentData } from '@/components/FullScreenContentViewer';
+import { FullScreenContentViewer, ContentData, CachedContentData } from '@/components/FullScreenContentViewer';
 
 export default function StudentContentView() {
   const { contentId } = useParams<{ contentId: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const isOnline = useOnlineStatus();
-  const { getContent } = useOfflineStorage();
+  const { getCachedContentById, isContentCached } = useContentStorage();
 
   const [content, setContent] = useState<ContentData | null>(null);
+  const [cachedContent, setCachedContent] = useState<CachedContentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCached, setIsCached] = useState(false);
 
@@ -47,22 +48,20 @@ export default function StudentContentView() {
     setLoading(true);
 
     try {
-      // Check cache first
-      const cachedContent = getContent();
-      const cachedItem = cachedContent.find((c: ContentData) => c.id === contentId);
-      
-      if (cachedItem) {
-        setContent(cachedItem);
+      // Check IndexedDB cache first
+      const cached = await getCachedContentById(contentId);
+      if (cached) {
+        setCachedContent(cached as CachedContentData);
         setIsCached(true);
       }
 
-      // If online, fetch fresh data
+      // If online, fetch fresh data from server
       if (isOnline) {
         const { data, error } = await supabase
           .from('content')
           .select('*')
           .eq('id', contentId)
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setContent(data as ContentData);
@@ -73,13 +72,20 @@ export default function StudentContentView() {
     } finally {
       setLoading(false);
     }
-  }, [contentId, isOnline, getContent]);
+  }, [contentId, isOnline, getCachedContentById]);
 
   useEffect(() => {
     if (user) {
       fetchContent();
     }
   }, [user, fetchContent]);
+
+  // Check cache status
+  useEffect(() => {
+    if (contentId) {
+      setIsCached(isContentCached(contentId));
+    }
+  }, [contentId, isContentCached]);
 
   const handleBack = useCallback(() => {
     // Navigate back to content list, preserving history
@@ -93,6 +99,7 @@ export default function StudentContentView() {
   return (
     <FullScreenContentViewer
       content={content}
+      cachedContent={cachedContent}
       loading={loading}
       isOffline={!isOnline}
       isCached={isCached}

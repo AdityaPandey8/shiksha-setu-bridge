@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2 } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2, Pencil, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,10 +32,13 @@ interface ContentItem {
   title: string;
   description: string | null;
   url: string | null;
-  content_type: 'video' | 'article' | 'pdf';
+  content_type: 'video' | 'article' | 'pdf' | 'image';
   class: string;
   language: 'hindi' | 'english';
   created_at: string;
+  article_body?: string | null;
+  image_url?: string | null;
+  version?: number;
 }
 
 interface QuizItem {
@@ -95,12 +98,15 @@ export default function TeacherDashboard() {
 
   // Content form
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
   const [contentTitle, setContentTitle] = useState('');
   const [contentDescription, setContentDescription] = useState('');
-  const [contentType, setContentType] = useState<'video' | 'article' | 'pdf'>('article');
+  const [contentType, setContentType] = useState<'video' | 'article' | 'pdf' | 'image'>('article');
   const [contentClass, setContentClass] = useState('8');
   const [contentLanguage, setContentLanguage] = useState<'hindi' | 'english'>('hindi');
   const [contentUrl, setContentUrl] = useState('');
+  const [contentArticleBody, setContentArticleBody] = useState('');
+  const [contentImageUrl, setContentImageUrl] = useState('');
   const [submittingContent, setSubmittingContent] = useState(false);
 
   // Quiz form
@@ -255,36 +261,75 @@ export default function TeacherDashboard() {
     setSubmittingContent(true);
 
     try {
-      const { error } = await supabase.from('content').insert({
+      const contentData = {
         title: contentTitle,
         description: contentDescription || null,
         url: contentUrl || null,
         content_type: contentType,
         class: contentClass,
         language: contentLanguage,
+        article_body: contentArticleBody || null,
+        image_url: contentImageUrl || null,
         created_by: user?.id,
-      });
+      };
 
-      if (error) throw error;
+      if (editingContentId) {
+        // Update existing content - increment version
+        const existingContent = content.find(c => c.id === editingContentId);
+        const newVersion = (existingContent?.version || 1) + 1;
+        
+        const { error } = await supabase
+          .from('content')
+          .update({ ...contentData, version: newVersion })
+          .eq('id', editingContentId);
 
-      toast({
-        title: t('contentAdded'),
-        description: t('contentAddedDesc'),
-      });
+        if (error) throw error;
+
+        toast({
+          title: 'Content Updated',
+          description: 'Learning content has been updated successfully.',
+        });
+      } else {
+        // Insert new content
+        const { error } = await supabase.from('content').insert({
+          ...contentData,
+          version: 1,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: t('contentAdded'),
+          description: t('contentAddedDesc'),
+        });
+      }
 
       setContentDialogOpen(false);
       resetContentForm();
       fetchData();
     } catch (error) {
-      console.error('Error adding content:', error);
+      console.error('Error saving content:', error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to add content.',
+        description: 'Failed to save content.',
       });
     } finally {
       setSubmittingContent(false);
     }
+  };
+
+  const handleEditContent = (item: ContentItem) => {
+    setEditingContentId(item.id);
+    setContentTitle(item.title);
+    setContentDescription(item.description || '');
+    setContentType(item.content_type);
+    setContentClass(item.class);
+    setContentLanguage(item.language);
+    setContentUrl(item.url || '');
+    setContentArticleBody(item.article_body || '');
+    setContentImageUrl(item.image_url || '');
+    setContentDialogOpen(true);
   };
 
   const handleDeleteContent = async (id: string) => {
@@ -366,12 +411,15 @@ export default function TeacherDashboard() {
   };
 
   const resetContentForm = () => {
+    setEditingContentId(null);
     setContentTitle('');
     setContentDescription('');
     setContentUrl('');
     setContentType('article');
     setContentClass('8');
     setContentLanguage('hindi');
+    setContentArticleBody('');
+    setContentImageUrl('');
   };
 
   const resetQuizForm = () => {
@@ -549,18 +597,18 @@ export default function TeacherDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>{t('learningContent')}</CardTitle>
-                  <Dialog open={contentDialogOpen} onOpenChange={setContentDialogOpen}>
+                  <Dialog open={contentDialogOpen} onOpenChange={(open) => { setContentDialogOpen(open); if (!open) resetContentForm(); }}>
                     <DialogTrigger asChild>
-                      <Button>
+                      <Button onClick={() => resetContentForm()}>
                         <Plus className="h-4 w-4 mr-2" />
                         {t('addContent')}
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                       <DialogHeader>
-                        <DialogTitle>{t('addNewContent')}</DialogTitle>
+                        <DialogTitle>{editingContentId ? 'Edit Content' : t('addNewContent')}</DialogTitle>
                         <DialogDescription>
-                          {t('createLearningMaterial')}
+                          {editingContentId ? 'Update learning material details' : t('createLearningMaterial')}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleAddContent} className="space-y-4">
@@ -581,29 +629,21 @@ export default function TeacherDashboard() {
                             value={contentDescription}
                             onChange={(e) => setContentDescription(e.target.value)}
                             placeholder={t('description')}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="url">{t('contentUrl')}</Label>
-                          <Input
-                            id="url"
-                            type="url"
-                            value={contentUrl}
-                            onChange={(e) => setContentUrl(e.target.value)}
-                            placeholder="https://example.com/resource"
+                            rows={2}
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>{t('contentType')}</Label>
-                            <Select value={contentType} onValueChange={(v) => setContentType(v as 'video' | 'article' | 'pdf')}>
+                            <Select value={contentType} onValueChange={(v) => setContentType(v as 'video' | 'article' | 'pdf' | 'image')}>
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="video">{t('video')}</SelectItem>
                                 <SelectItem value="article">{t('article')}</SelectItem>
+                                <SelectItem value="video">{t('video')}</SelectItem>
                                 <SelectItem value="pdf">{t('pdf')}</SelectItem>
+                                <SelectItem value="image">Image</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -635,9 +675,45 @@ export default function TeacherDashboard() {
                             </SelectContent>
                           </Select>
                         </div>
+                        {(contentType === 'video' || contentType === 'pdf') && (
+                          <div className="space-y-2">
+                            <Label htmlFor="url">{contentType === 'video' ? 'Video URL (YouTube or direct)' : 'PDF URL'}</Label>
+                            <Input
+                              id="url"
+                              type="url"
+                              value={contentUrl}
+                              onChange={(e) => setContentUrl(e.target.value)}
+                              placeholder="https://example.com/resource"
+                            />
+                          </div>
+                        )}
+                        {contentType === 'image' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="imageUrl">Image URL</Label>
+                            <Input
+                              id="imageUrl"
+                              type="url"
+                              value={contentImageUrl}
+                              onChange={(e) => setContentImageUrl(e.target.value)}
+                              placeholder="https://example.com/image.jpg"
+                            />
+                          </div>
+                        )}
+                        {contentType === 'article' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="articleBody">Article Body</Label>
+                            <Textarea
+                              id="articleBody"
+                              value={contentArticleBody}
+                              onChange={(e) => setContentArticleBody(e.target.value)}
+                              placeholder="Write the full article content here..."
+                              rows={6}
+                            />
+                          </div>
+                        )}
                         <Button type="submit" className="w-full" disabled={submittingContent}>
                           {submittingContent && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                          {submittingContent ? t('adding') : t('addContent')}
+                          {submittingContent ? (editingContentId ? 'Updating...' : t('adding')) : (editingContentId ? 'Update Content' : t('addContent'))}
                         </Button>
                       </form>
                     </DialogContent>
@@ -666,13 +742,23 @@ export default function TeacherDashboard() {
                           <TableCell className="font-medium">{item.title}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="capitalize">
-                              {item.content_type === 'video' ? t('video') : item.content_type === 'article' ? t('article') : t('pdf')}
+                              {item.content_type === 'video' ? t('video') : item.content_type === 'article' ? t('article') : item.content_type === 'image' ? 'Image' : t('pdf')}
                             </Badge>
                           </TableCell>
                           <TableCell>{t('class')} {item.class}</TableCell>
                           <TableCell className="capitalize">{item.language === 'hindi' ? t('hindi') : t('english')}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-1">
+                              {/* Edit Button */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditContent(item)}
+                                title="Edit Content"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              
                               {/* View Full Screen Button */}
                               <Button
                                 variant="ghost"

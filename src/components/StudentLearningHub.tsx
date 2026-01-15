@@ -1,42 +1,52 @@
 /**
  * StudentLearningHub Component
  * 
- * Professional grid of learning path navigation cards.
- * Each card shows offline availability status.
- * Designed for accessibility on mobile devices.
+ * This component displays 4 main learning path navigation cards:
+ * - E-Books: Structured curriculum for offline reading
+ * - Learning Content: Videos, PDFs, notes
+ * - Quizzes: Practice and self-evaluation
+ * - Career Guidance: Explore future paths
+ * 
+ * OFFLINE-FIRST BEHAVIOR:
+ * - Each card shows a green dot if data is cached locally
+ * - Grey dot indicates "Download First" needed
+ * - Works on low-end Android devices with large touch targets
  */
 
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, FolderOpen, FileQuestion, GraduationCap, Bot, Layers, ArrowRight, Download, Check } from 'lucide-react';
+import { BookOpen, FolderOpen, FileQuestion, GraduationCap, Circle, Bot, Layers } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/hooks/useLanguage';
-import { cn } from '@/lib/utils';
 
+// Storage keys for checking offline availability
 const CACHE_KEYS = {
   ebooks: 'shiksha_setu_ebooks',
   content: 'shiksha_setu_content',
   quizzes: 'shiksha_setu_quizzes',
   career: 'shiksha_setu_career_data',
-  saarthi: 'shiksha_setu_saarthi',
-  studyTools: 'shiksha_setu_bookmarks',
+  saarthi: 'shiksha_setu_saarthi', // Always available offline
+  studyTools: 'shiksha_setu_bookmarks', // Study tools always offline
 };
 
 interface LearningPathCard {
   id: string;
-  icon: React.ElementType;
-  title: string;
-  subtitle: string;
+  icon: React.ReactNode;
+  titleKey: string;
+  subtitleKey: string;
   route: string;
   cacheKey: string;
-  gradient: string;
+  bgColor: string;
+  iconColor: string;
 }
 
 export function StudentLearningHub() {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
+  // Check if data is cached for offline use
+  // Setu Saarthi and Study Tools are always considered available offline
   const isCached = (key: string): boolean => {
-    if (key === CACHE_KEYS.saarthi || key === CACHE_KEYS.studyTools) return true;
+    if (key === CACHE_KEYS.saarthi || key === CACHE_KEYS.studyTools) return true; // Always works offline
     try {
       const data = localStorage.getItem(key);
       return data !== null && data !== '[]' && data !== '{}';
@@ -48,128 +58,128 @@ export function StudentLearningHub() {
   const learningPaths: LearningPathCard[] = [
     {
       id: 'saarthi',
-      icon: Bot,
-      title: 'Setu Saarthi',
-      subtitle: 'Ask doubts & get guidance',
+      icon: <Bot className="h-8 w-8" />,
+      titleKey: 'hubSaarthi',
+      subtitleKey: 'hubSaarthiDesc',
       route: '/student/setu-saarthi',
       cacheKey: CACHE_KEYS.saarthi,
-      gradient: 'from-violet-500 to-purple-600',
+      bgColor: 'bg-violet-500/10 dark:bg-violet-500/20',
+      iconColor: 'text-violet-600 dark:text-violet-400',
     },
     {
       id: 'studytools',
-      icon: Layers,
-      title: 'My Study Tools',
-      subtitle: 'Bookmarks, Notes & Flashcards',
+      icon: <Layers className="h-8 w-8" />,
+      titleKey: 'hubStudyTools',
+      subtitleKey: 'hubStudyToolsDesc',
       route: '/student/study-tools',
       cacheKey: CACHE_KEYS.studyTools,
-      gradient: 'from-indigo-500 to-blue-600',
+      bgColor: 'bg-indigo-500/10 dark:bg-indigo-500/20',
+      iconColor: 'text-indigo-600 dark:text-indigo-400',
     },
     {
       id: 'ebooks',
-      icon: BookOpen,
-      title: t('hubEbooks'),
-      subtitle: t('hubEbooksDesc'),
+      icon: <BookOpen className="h-8 w-8" />,
+      titleKey: 'hubEbooks',
+      subtitleKey: 'hubEbooksDesc',
       route: '/student/ebooks',
       cacheKey: CACHE_KEYS.ebooks,
-      gradient: 'from-blue-500 to-cyan-500',
+      bgColor: 'bg-blue-500/10 dark:bg-blue-500/20',
+      iconColor: 'text-blue-600 dark:text-blue-400',
     },
     {
       id: 'content',
-      icon: FolderOpen,
-      title: t('hubContent'),
-      subtitle: t('hubContentDesc'),
+      icon: <FolderOpen className="h-8 w-8" />,
+      titleKey: 'hubContent',
+      subtitleKey: 'hubContentDesc',
       route: '/student/content',
       cacheKey: CACHE_KEYS.content,
-      gradient: 'from-teal-500 to-emerald-500',
+      bgColor: 'bg-green-500/10 dark:bg-green-500/20',
+      iconColor: 'text-green-600 dark:text-green-400',
     },
     {
       id: 'quizzes',
-      icon: FileQuestion,
-      title: t('hubQuizzes'),
-      subtitle: t('hubQuizzesDesc'),
+      icon: <FileQuestion className="h-8 w-8" />,
+      titleKey: 'hubQuizzes',
+      subtitleKey: 'hubQuizzesDesc',
       route: '/student/quizzes',
       cacheKey: CACHE_KEYS.quizzes,
-      gradient: 'from-orange-500 to-amber-500',
+      bgColor: 'bg-orange-500/10 dark:bg-orange-500/20',
+      iconColor: 'text-orange-600 dark:text-orange-400',
     },
     {
       id: 'career',
-      icon: GraduationCap,
-      title: t('hubCareer'),
-      subtitle: t('hubCareerDesc'),
+      icon: <GraduationCap className="h-8 w-8" />,
+      titleKey: 'hubCareer',
+      subtitleKey: 'hubCareerDesc',
       route: '/student/career',
       cacheKey: CACHE_KEYS.career,
-      gradient: 'from-purple-500 to-pink-500',
+      bgColor: 'bg-purple-500/10 dark:bg-purple-500/20',
+      iconColor: 'text-purple-600 dark:text-purple-400',
     },
   ];
 
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-foreground">
-          {t('chooseLearningPath')}
-        </h2>
-      </div>
+    <div className="mb-6">
+      {/* Section Title */}
+      <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+        {t('chooseLearningPath')}
+      </h2>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {learningPaths.map((path, index) => {
+      {/* 2x2 Grid of Learning Path Cards */}
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
+        {learningPaths.map((path) => {
           const isAvailableOffline = isCached(path.cacheKey);
-          const Icon = path.icon;
           
           return (
             <Card
               key={path.id}
-              className={cn(
-                "group cursor-pointer card-hover border-0 shadow-soft overflow-hidden animate-fade-in",
-              )}
-              style={{ animationDelay: `${index * 0.05}s` }}
+              className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] border-2 hover:border-primary/50"
               onClick={() => navigate(path.route)}
             >
-              <CardContent className="p-0">
-                {/* Gradient Header */}
-                <div className={cn(
-                  "h-20 md:h-24 bg-gradient-to-br flex items-center justify-center relative",
-                  path.gradient
-                )}>
-                  <Icon className="h-8 w-8 md:h-10 md:w-10 text-white" />
-                  
-                  {/* Arrow indicator on hover */}
-                  <div className="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ArrowRight className="h-4 w-4 text-white/80" />
-                  </div>
+              <CardContent className="p-4 md:p-5">
+                {/* Icon Container */}
+                <div className={`w-14 h-14 md:w-16 md:h-16 rounded-xl ${path.bgColor} flex items-center justify-center mb-3`}>
+                  <span className={path.iconColor}>{path.icon}</span>
                 </div>
 
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-sm md:text-base text-foreground mb-1 line-clamp-1">
-                    {path.title}
-                  </h3>
-                  <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 mb-3 min-h-[2.5rem]">
-                    {path.subtitle}
-                  </p>
+                {/* Title */}
+                <h3 className="font-semibold text-sm md:text-base mb-1 line-clamp-1">
+                  {path.id === 'saarthi' && 'Setu Saarthi'}
+                  {path.id === 'studytools' && 'My Study Tools'}
+                  {path.id === 'ebooks' && t('hubEbooks')}
+                  {path.id === 'content' && t('hubContent')}
+                  {path.id === 'quizzes' && t('hubQuizzes')}
+                  {path.id === 'career' && t('hubCareer')}
+                </h3>
 
-                  {/* Offline Status */}
-                  <div className={cn(
-                    "flex items-center gap-1.5 text-xs font-medium",
-                    isAvailableOffline ? "text-success" : "text-muted-foreground"
-                  )}>
-                    {isAvailableOffline ? (
-                      <>
-                        <Check className="h-3.5 w-3.5" />
-                        <span>{t('availableOffline')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-3.5 w-3.5" />
-                        <span>{t('downloadFirst')}</span>
-                      </>
-                    )}
-                  </div>
+                {/* Subtitle */}
+                <p className="text-xs md:text-sm text-muted-foreground line-clamp-2 mb-2">
+                  {path.id === 'saarthi' && 'Ask doubts & get guidance'}
+                  {path.id === 'studytools' && 'Bookmarks, Notes & Flashcards'}
+                  {path.id === 'ebooks' && t('hubEbooksDesc')}
+                  {path.id === 'content' && t('hubContentDesc')}
+                  {path.id === 'quizzes' && t('hubQuizzesDesc')}
+                  {path.id === 'career' && t('hubCareerDesc')}
+                </p>
+
+                {/* Offline Status Indicator */}
+                <div className="flex items-center gap-1.5">
+                  <Circle
+                    className={`h-2.5 w-2.5 ${
+                      isAvailableOffline
+                        ? 'fill-green-500 text-green-500'
+                        : 'fill-muted text-muted'
+                    }`}
+                  />
+                  <span className="text-xs text-muted-foreground">
+                    {isAvailableOffline ? t('availableOffline') : t('downloadFirst')}
+                  </span>
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

@@ -31,9 +31,12 @@ interface ContentItem {
   title: string;
   description: string | null;
   url: string | null;
-  content_type: 'video' | 'article' | 'pdf';
+  content_type: 'video' | 'article' | 'pdf' | 'image';
   class: string;
   language: 'hindi' | 'english';
+  article_body?: string | null;
+  image_url?: string | null;
+  version?: number;
 }
 
 export default function StudentContent() {
@@ -198,6 +201,9 @@ export default function StudentContent() {
                 url={item.url}
                 contentType={item.content_type}
                 language={item.language}
+                articleBody={item.article_body}
+                imageUrl={item.image_url}
+                version={item.version}
               />
             ))}
           </div>

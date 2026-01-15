@@ -55,40 +55,49 @@ export type Database = {
       }
       content: {
         Row: {
+          article_body: string | null
           class: string
           content_type: Database["public"]["Enums"]["content_type"]
           created_at: string
           created_by: string | null
           description: string | null
           id: string
+          image_url: string | null
           language: Database["public"]["Enums"]["content_language"]
           title: string
           updated_at: string
           url: string | null
+          version: number | null
         }
         Insert: {
+          article_body?: string | null
           class: string
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           language?: Database["public"]["Enums"]["content_language"]
           title: string
           updated_at?: string
           url?: string | null
+          version?: number | null
         }
         Update: {
+          article_body?: string | null
           class?: string
           content_type?: Database["public"]["Enums"]["content_type"]
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
+          image_url?: string | null
           language?: Database["public"]["Enums"]["content_language"]
           title?: string
           updated_at?: string
           url?: string | null
+          version?: number | null
         }
         Relationships: []
       }
@@ -341,7 +350,7 @@ export type Database = {
     Enums: {
       app_role: "student" | "teacher" | "admin"
       content_language: "hindi" | "english"
-      content_type: "video" | "article" | "pdf"
+      content_type: "video" | "article" | "pdf" | "image"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -471,7 +480,7 @@ export const Constants = {
     Enums: {
       app_role: ["student", "teacher", "admin"],
       content_language: ["hindi", "english"],
-      content_type: ["video", "article", "pdf"],
+      content_type: ["video", "article", "pdf", "image"],
     },
   },
 } as const

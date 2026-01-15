@@ -29,11 +29,18 @@ export interface CachedContent {
   id: string;
   title: string;
   description?: string;
-  contentType: 'video' | 'article' | 'pdf';
+  contentType: 'video' | 'article' | 'pdf' | 'image';
   class: string;
   language: 'hindi' | 'english';
   url?: string;
+  articleBody?: string;
+  imageUrl?: string;
+  imageBlob?: Blob;
+  pdfBlob?: Blob;
+  version: number;
+  sizeBytes?: number;
   cachedAt: Date;
+  lastAccessed: Date;
 }
 
 export interface CachedCareerData {
@@ -100,6 +107,18 @@ class ShikshaStuDB extends Dexie {
       ebooks: 'id, subject, class, language, cachedAt, lastAccessed',
       quizzes: 'id, class, language, cachedAt',
       content: 'id, contentType, class, language, cachedAt',
+      careerData: 'id, type, language, cachedAt',
+      chatbotSummaries: 'id, chapterId, subject, class, language, cachedAt',
+      offlineProgress: 'id, contentId, pendingSync, syncedAt',
+      offlineQuizScores: 'id, quizId, pendingSync, syncedAt, attemptedAt',
+      userPreferences: 'key, updatedAt'
+    });
+
+    // Version 2: Add version and lastAccessed to content
+    this.version(2).stores({
+      ebooks: 'id, subject, class, language, cachedAt, lastAccessed',
+      quizzes: 'id, class, language, cachedAt',
+      content: 'id, contentType, class, language, cachedAt, lastAccessed, version',
       careerData: 'id, type, language, cachedAt',
       chatbotSummaries: 'id, chapterId, subject, class, language, cachedAt',
       offlineProgress: 'id, contentId, pendingSync, syncedAt',

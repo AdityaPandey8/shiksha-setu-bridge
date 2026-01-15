@@ -52,7 +52,7 @@ export default function TeacherContentView() {
           .from('content')
           .select('*')
           .eq('id', contentId)
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setContent(data as ContentData);

@@ -5,11 +5,12 @@
  * Features:
  * - Upload PDF files to Supabase storage
  * - Add/Edit/Delete E-Books with metadata
+ * - Subject restrictions based on teacher allocation
  * - Sync to database for all students
  */
 
 import { useState, useEffect } from 'react';
-import { Plus, BookOpen, Trash2, Edit, Upload, FileText, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, BookOpen, Trash2, Edit, Upload, FileText, Loader2, ExternalLink, AlertTriangle, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -20,8 +21,11 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useToast } from '@/hooks/use-toast';
+import { useTeacherAllocation } from '@/hooks/useTeacherAllocation';
+import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 
 interface EbookRecord {
@@ -37,9 +41,15 @@ interface EbookRecord {
   created_at: string;
 }
 
-export function EbookPdfManager() {
-  const { t } = useLanguage();
+interface EbookPdfManagerProps {
+  onOpenFullScreen?: () => void;
+}
+
+export function EbookPdfManager({ onOpenFullScreen }: EbookPdfManagerProps) {
+  const { t, language: preferredLanguage } = useLanguage();
   const { toast } = useToast();
+  const { allocation, loading: allocationLoading } = useTeacherAllocation();
+  const { getSubjectLabel } = useSubjects();
   
   const [ebooks, setEbooks] = useState<EbookRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +65,15 @@ export function EbookPdfManager() {
   const [offlineEnabled, setOfflineEnabled] = useState(true);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Set defaults from allocation
+  useEffect(() => {
+    if (allocation && !allocationLoading) {
+      if (allocation.classes.length > 0) setEbookClass(allocation.classes[0]);
+      if (allocation.languages.length > 0) setLanguage(allocation.languages[0] as 'hindi' | 'english');
+      if (allocation.subjects.length > 0 && !subject) setSubject(allocation.subjects[0]);
+    }
+  }, [allocation, allocationLoading]);
 
   // Fetch ebooks
   const fetchEbooks = async () => {
@@ -79,10 +98,10 @@ export function EbookPdfManager() {
 
   const resetForm = () => {
     setTitle('');
-    setSubject('');
+    setSubject(allocation?.subjects[0] || '');
     setDescription('');
-    setEbookClass('6');
-    setLanguage('hindi');
+    setEbookClass(allocation?.classes[0] || '6');
+    setLanguage((allocation?.languages[0] as 'hindi' | 'english') || 'hindi');
     setOfflineEnabled(true);
     setPdfFile(null);
     setEditingEbook(null);
@@ -111,6 +130,16 @@ export function EbookPdfManager() {
         variant: 'destructive',
         title: 'PDF Required',
         description: 'Please upload a PDF file for the E-Book.',
+      });
+      return;
+    }
+
+    // Validate against allocation
+    if (allocation && !allocation.subjects.includes(subject)) {
+      toast({
+        variant: 'destructive',
+        title: 'Unauthorized Subject',
+        description: 'You are not allocated to create E-Books for this subject.',
       });
       return;
     }
@@ -283,13 +312,27 @@ export function EbookPdfManager() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="subject">Subject *</Label>
-                  <Input
-                    id="subject"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g., Mathematics, Science, Hindi"
-                    required
-                  />
+                  <Select value={subject} onValueChange={setSubject} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allocation?.subjects.length ? (
+                        allocation.subjects.map(subj => (
+                          <SelectItem key={subj} value={subj}>
+                            {getSubjectLabel(subj, preferredLanguage === 'hi' ? 'hindi' : 'english')}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>No subjects allocated</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {allocation && allocation.subjects.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      You have no subjects allocated. Contact Admin.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -310,11 +353,9 @@ export function EbookPdfManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="6">Class 6</SelectItem>
-                        <SelectItem value="7">Class 7</SelectItem>
-                        <SelectItem value="8">Class 8</SelectItem>
-                        <SelectItem value="9">Class 9</SelectItem>
-                        <SelectItem value="10">Class 10</SelectItem>
+                        {(allocation?.classes.length ? allocation.classes : ['6', '7', '8', '9', '10']).map(cls => (
+                          <SelectItem key={cls} value={cls}>Class {cls}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -325,8 +366,9 @@ export function EbookPdfManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="hindi">Hindi</SelectItem>
-                        <SelectItem value="english">English</SelectItem>
+                        {(allocation?.languages.length ? allocation.languages : ['hindi', 'english']).map(lang => (
+                          <SelectItem key={lang} value={lang} className="capitalize">{lang}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

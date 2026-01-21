@@ -13,6 +13,7 @@ import { OfflineChatbot } from '@/components/OfflineChatbot';
 import { DailyTip } from '@/components/DailyTip';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 /**
  * StudentDashboard - Clean Feature Selector
@@ -158,6 +159,7 @@ export default function StudentDashboard() {
             <div className="flex items-center gap-2">
               {/* Real-time Connectivity Status */}
               <ConnectionStatus />
+              <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title={t('profileSettings')}>
                 <Settings className="h-4 w-4" />
               </Button>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings, Pencil } from 'lucide-react';
+import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings, Pencil, GraduationCap, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SubjectManagement } from '@/components/SubjectManagement';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -34,6 +37,16 @@ interface Teacher {
   created_at: string;
 }
 
+interface Student {
+  id: string;
+  email: string;
+  full_name: string | null;
+  class: string | null;
+  language: 'hindi' | 'english' | null;
+  selected_subjects: string[] | null;
+  created_at: string;
+}
+
 const AVAILABLE_CLASSES = ['6', '7', '8', '9', '10'];
 const AVAILABLE_LANGUAGES = ['hindi', 'english'];
 
@@ -44,11 +57,24 @@ export default function AdminDashboard() {
   const { activeSubjects, getSubjectLabel } = useSubjects();
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  
+  // Student management
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+  const [studentClassFilter, setStudentClassFilter] = useState<string>('all');
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isEditStudentDialogOpen, setIsEditStudentDialogOpen] = useState(false);
+  const [studentFormData, setStudentFormData] = useState({
+    full_name: '',
+    class: '',
+    language: 'hindi' as 'hindi' | 'english',
+  });
 
   // Form state
   const [newTeacher, setNewTeacher] = useState({
@@ -137,6 +163,150 @@ export default function AdminDashboard() {
       setLoading(false);
     }
   };
+
+  // Fetch students
+  const fetchStudents = async () => {
+    setStudentsLoading(true);
+    try {
+      // Fetch all profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Fetch student roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'student');
+
+      if (rolesError) throw rolesError;
+
+      const studentIds = rolesData?.map(r => r.user_id) || [];
+      const studentList = (profilesData || [])
+        .filter(p => studentIds.includes(p.id))
+        .map(p => ({
+          id: p.id,
+          email: p.email,
+          full_name: p.full_name,
+          class: p.class,
+          language: p.language,
+          selected_subjects: p.selected_subjects,
+          created_at: p.created_at,
+        }));
+
+      setStudents(studentList);
+      localStorage.setItem('shiksha_setu_admin_students', JSON.stringify(studentList));
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      const cached = localStorage.getItem('shiksha_setu_admin_students');
+      if (cached) {
+        setStudents(JSON.parse(cached));
+        toast({
+          title: 'Offline Mode',
+          description: 'Showing cached student data.',
+        });
+      }
+    } finally {
+      setStudentsLoading(false);
+    }
+  };
+
+  const handleEditStudent = (student: Student) => {
+    setEditingStudent(student);
+    setStudentFormData({
+      full_name: student.full_name || '',
+      class: student.class || '',
+      language: student.language || 'hindi',
+    });
+    setIsEditStudentDialogOpen(true);
+  };
+
+  const handleUpdateStudent = async () => {
+    if (!editingStudent) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: studentFormData.full_name,
+          class: studentFormData.class,
+          language: studentFormData.language,
+        })
+        .eq('id', editingStudent.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Student profile updated successfully.',
+      });
+
+      setIsEditStudentDialogOpen(false);
+      setEditingStudent(null);
+      fetchStudents();
+    } catch (error: any) {
+      console.error('Error updating student:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update student.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteStudent = async (studentId: string) => {
+    try {
+      // Delete from user_roles first
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', studentId);
+
+      if (roleError) throw roleError;
+
+      // Delete from profiles
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', studentId);
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: 'Success',
+        description: 'Student deleted successfully.',
+      });
+
+      fetchStudents();
+    } catch (error: any) {
+      console.error('Error deleting student:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to delete student.',
+      });
+    }
+  };
+
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = studentSearchQuery === '' || 
+      student.full_name?.toLowerCase().includes(studentSearchQuery.toLowerCase()) ||
+      student.email.toLowerCase().includes(studentSearchQuery.toLowerCase());
+    const matchesClass = studentClassFilter === 'all' || student.class === studentClassFilter;
+    return matchesSearch && matchesClass;
+  });
+
+  // Fetch students when component mounts
+  useEffect(() => {
+    if (user && role === 'admin') {
+      fetchStudents();
+    }
+  }, [user, role]);
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
@@ -394,6 +564,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title="Profile & Settings">
               <Settings className="h-4 w-4" />
             </Button>
@@ -447,6 +618,7 @@ export default function AdminDashboard() {
         <Tabs defaultValue="teachers" className="space-y-6">
           <TabsList>
             <TabsTrigger value="teachers">Manage Teachers</TabsTrigger>
+            <TabsTrigger value="students">Manage Students</TabsTrigger>
             <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
           </TabsList>
 
@@ -690,6 +862,147 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* Students Tab */}
+          <TabsContent value="students">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <GraduationCap className="h-5 w-5" />
+                      Manage Students
+                    </CardTitle>
+                    <CardDescription>
+                      View, edit, and manage student accounts
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by name or email..."
+                        value={studentSearchQuery}
+                        onChange={(e) => setStudentSearchQuery(e.target.value)}
+                        className="pl-9 w-[250px]"
+                      />
+                    </div>
+                    <Select value={studentClassFilter} onValueChange={setStudentClassFilter}>
+                      <SelectTrigger className="w-[130px]">
+                        <SelectValue placeholder="Filter by class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Classes</SelectItem>
+                        {AVAILABLE_CLASSES.map(cls => (
+                          <SelectItem key={cls} value={cls}>Class {cls}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {studentsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : filteredStudents.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <GraduationCap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>{students.length === 0 ? 'No students registered yet.' : 'No students match your search.'}</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Class</TableHead>
+                          <TableHead>Language</TableHead>
+                          <TableHead>Subjects</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredStudents.map((student) => (
+                          <TableRow key={student.id}>
+                            <TableCell className="font-medium">
+                              {student.full_name || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {student.email}
+                            </TableCell>
+                            <TableCell>
+                              {student.class ? (
+                                <Badge variant="outline">Class {student.class}</Badge>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="capitalize">
+                              {student.language || '-'}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                {student.selected_subjects?.length ? (
+                                  student.selected_subjects.slice(0, 3).map(s => (
+                                    <Badge key={s} variant="secondary" className="text-xs">
+                                      {getSubjectLabel(s, 'english')}
+                                    </Badge>
+                                  ))
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">None selected</span>
+                                )}
+                                {(student.selected_subjects?.length || 0) > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{student.selected_subjects!.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditStudent(student)}
+                                  title="Edit Student"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive" title="Delete Student">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Student</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete {student.full_name || student.email}? This action cannot be undone and will remove all their progress data.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteStudent(student.id)}>
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Subjects Tab */}
           <TabsContent value="subjects">
             <SubjectManagement />
@@ -764,6 +1077,58 @@ export default function AdminDashboard() {
               >
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Update Allocation
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Student Dialog */}
+        <Dialog open={isEditStudentDialogOpen} onOpenChange={setIsEditStudentDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Student</DialogTitle>
+              <DialogDescription>
+                Update details for {editingStudent?.full_name || editingStudent?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="student-name">Full Name</Label>
+                <Input
+                  id="student-name"
+                  value={studentFormData.full_name}
+                  onChange={(e) => setStudentFormData(prev => ({ ...prev, full_name: e.target.value }))}
+                  placeholder="Enter student name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Select value={studentFormData.class} onValueChange={(v) => setStudentFormData(prev => ({ ...prev, class: v }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AVAILABLE_CLASSES.map(cls => (
+                      <SelectItem key={cls} value={cls}>Class {cls}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Language</Label>
+                <Select value={studentFormData.language} onValueChange={(v) => setStudentFormData(prev => ({ ...prev, language: v as 'hindi' | 'english' }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hindi">Hindi</SelectItem>
+                    <SelectItem value="english">English</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleUpdateStudent} disabled={submitting} className="w-full">
+                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Update Student
               </Button>
             </div>
           </DialogContent>

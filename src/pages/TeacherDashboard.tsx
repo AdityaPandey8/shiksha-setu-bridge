@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2, Pencil, Image as ImageIcon, FileText, Video, Link } from 'lucide-react';
+import { LogOut, Users, BookOpen, HelpCircle, BarChart3, Plus, Trash2, Loader2, ChevronDown, ChevronUp, CheckCircle2, XCircle, Settings, WifiOff, Maximize2, Pencil, Image as ImageIcon, FileText, Video, Link, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +19,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useOfflineAuth } from '@/hooks/useOfflineAuth';
+import { useTeacherAllocation } from '@/hooks/useTeacherAllocation';
+import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OnlineIndicator } from '@/components/OfflineBanner';
@@ -27,6 +29,9 @@ import { EbookPdfManager } from '@/components/EbookPdfManager';
 import { useEbookStorage } from '@/hooks/useEbookStorage';
 import { ChatbotSummaryManager } from '@/components/ChatbotSummaryManager';
 import { ContentFileUpload } from '@/components/ContentFileUpload';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { FullScreenContentEditor } from '@/components/FullScreenContentEditor';
+import { FullScreenEbookEditor } from '@/components/FullScreenEbookEditor';
 
 interface ContentItem {
   id: string;
@@ -86,6 +91,8 @@ export default function TeacherDashboard() {
   const { t, language: preferredLanguage } = useLanguage();
   const { ebooks } = useEbookStorage();
   const { isOnline, getOfflineAuthData } = useOfflineAuth();
+  const { allocation, loading: allocationLoading } = useTeacherAllocation();
+  const { getSubjectLabel } = useSubjects();
   const [offlineSession, setOfflineSession] = useState(false);
 
   // Get offline auth data for offline sessions
@@ -97,6 +104,10 @@ export default function TeacherDashboard() {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
+  // Full-screen editor states
+  const [showFullScreenContentEditor, setShowFullScreenContentEditor] = useState(false);
+  const [showFullScreenEbookEditor, setShowFullScreenEbookEditor] = useState(false);
+
   // Content form
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
   const [editingContentId, setEditingContentId] = useState<string | null>(null);
@@ -105,6 +116,7 @@ export default function TeacherDashboard() {
   const [contentType, setContentType] = useState<'video' | 'article' | 'pdf' | 'image'>('article');
   const [contentClass, setContentClass] = useState('8');
   const [contentLanguage, setContentLanguage] = useState<'hindi' | 'english'>('hindi');
+  const [contentSubject, setContentSubject] = useState('');
   const [contentUrl, setContentUrl] = useState('');
   const [contentArticleBody, setContentArticleBody] = useState('');
   const [contentImageUrl, setContentImageUrl] = useState('');
@@ -117,7 +129,26 @@ export default function TeacherDashboard() {
   const [quizCorrectAnswer, setQuizCorrectAnswer] = useState(0);
   const [quizClass, setQuizClass] = useState('8');
   const [quizLanguage, setQuizLanguage] = useState<'hindi' | 'english'>('hindi');
+  const [quizSubject, setQuizSubject] = useState('');
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
+
+  // Set default values from allocation when it loads
+  useEffect(() => {
+    if (allocation && !allocationLoading) {
+      if (allocation.classes.length > 0 && !allocation.classes.includes(contentClass)) {
+        setContentClass(allocation.classes[0]);
+        setQuizClass(allocation.classes[0]);
+      }
+      if (allocation.languages.length > 0 && !allocation.languages.includes(contentLanguage)) {
+        setContentLanguage(allocation.languages[0] as 'hindi' | 'english');
+        setQuizLanguage(allocation.languages[0] as 'hindi' | 'english');
+      }
+      if (allocation.subjects.length > 0 && !contentSubject) {
+        setContentSubject(allocation.subjects[0]);
+        setQuizSubject(allocation.subjects[0]);
+      }
+    }
+  }, [allocation, allocationLoading]);
 
   // Check for offline session
   useEffect(() => {
@@ -259,6 +290,17 @@ export default function TeacherDashboard() {
 
   const handleAddContent = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate against teacher allocation
+    if (allocation && !allocation.subjects.includes(contentSubject)) {
+      toast({
+        variant: 'destructive',
+        title: 'Unauthorized Subject',
+        description: 'You are not allocated to create content for this subject.',
+      });
+      return;
+    }
+    
     setSubmittingContent(true);
 
     try {
@@ -269,6 +311,7 @@ export default function TeacherDashboard() {
         content_type: contentType,
         class: contentClass,
         language: contentLanguage,
+        subject: contentSubject || null,
         article_body: contentArticleBody || null,
         image_url: contentImageUrl || null,
         created_by: user?.id,
@@ -356,6 +399,17 @@ export default function TeacherDashboard() {
 
   const handleAddQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate against teacher allocation
+    if (allocation && !allocation.subjects.includes(quizSubject)) {
+      toast({
+        variant: 'destructive',
+        title: 'Unauthorized Subject',
+        description: 'You are not allocated to create quizzes for this subject.',
+      });
+      return;
+    }
+    
     setSubmittingQuiz(true);
 
     try {
@@ -365,6 +419,7 @@ export default function TeacherDashboard() {
         correct_answer: quizCorrectAnswer,
         class: quizClass,
         language: quizLanguage,
+        subject: quizSubject || null,
         created_by: user?.id,
       });
 
@@ -417,8 +472,9 @@ export default function TeacherDashboard() {
     setContentDescription('');
     setContentUrl('');
     setContentType('article');
-    setContentClass('8');
-    setContentLanguage('hindi');
+    setContentClass(allocation?.classes[0] || '8');
+    setContentLanguage((allocation?.languages[0] as 'hindi' | 'english') || 'hindi');
+    setContentSubject(allocation?.subjects[0] || '');
     setContentArticleBody('');
     setContentImageUrl('');
   };
@@ -427,8 +483,9 @@ export default function TeacherDashboard() {
     setQuizQuestion('');
     setQuizOptions(['', '', '', '']);
     setQuizCorrectAnswer(0);
-    setQuizClass('8');
-    setQuizLanguage('hindi');
+    setQuizClass(allocation?.classes[0] || '8');
+    setQuizLanguage((allocation?.languages[0] as 'hindi' | 'english') || 'hindi');
+    setQuizSubject(allocation?.subjects[0] || '');
   };
 
   const handleLogout = async () => {
@@ -502,6 +559,7 @@ export default function TeacherDashboard() {
             </div>
             <div className="flex items-center gap-2">
               <OnlineIndicator />
+              <ThemeToggle />
               <Button variant="ghost" size="icon" onClick={() => navigate('/settings')} title={t('profileSettings')}>
                 <Settings className="h-4 w-4" />
               </Button>
@@ -655,15 +713,40 @@ export default function TeacherDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="6">{t('class6')}</SelectItem>
-                                <SelectItem value="7">{t('class7')}</SelectItem>
-                                <SelectItem value="8">{t('class8')}</SelectItem>
-                                <SelectItem value="9">{t('class9')}</SelectItem>
-                                <SelectItem value="10">{t('class10')}</SelectItem>
+                                {(allocation?.classes.length ? allocation.classes : ['6', '7', '8', '9', '10']).map(cls => (
+                                  <SelectItem key={cls} value={cls}>{t('class')} {cls}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
+                        
+                        {/* Subject Selection - Restricted to allocated subjects */}
+                        <div className="space-y-2">
+                          <Label>Subject *</Label>
+                          <Select value={contentSubject} onValueChange={setContentSubject} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select subject" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allocation?.subjects.length ? (
+                                allocation.subjects.map(subj => (
+                                  <SelectItem key={subj} value={subj}>
+                                    {getSubjectLabel(subj, preferredLanguage === 'hi' ? 'hindi' : 'english')}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="" disabled>No subjects allocated</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {allocation && allocation.subjects.length === 0 && (
+                            <p className="text-xs text-destructive">
+                              You have no subjects allocated. Contact Admin.
+                            </p>
+                          )}
+                        </div>
+                        
                         <div className="space-y-2">
                           <Label>{t('language')}</Label>
                           <Select value={contentLanguage} onValueChange={(v) => setContentLanguage(v as 'hindi' | 'english')}>
@@ -671,8 +754,9 @@ export default function TeacherDashboard() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="hindi">{t('hindi')}</SelectItem>
-                              <SelectItem value="english">{t('english')}</SelectItem>
+                              {(allocation?.languages.length ? allocation.languages : ['hindi', 'english']).map(lang => (
+                                <SelectItem key={lang} value={lang} className="capitalize">{lang}</SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

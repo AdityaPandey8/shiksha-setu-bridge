@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings } from 'lucide-react';
+import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SubjectManagement } from '@/components/SubjectManagement';
 import {
   Table,
   TableBody,
@@ -26,21 +29,25 @@ interface Teacher {
   full_name: string | null;
   subjects: string[];
   classes: string[];
+  languages: string[];
   is_active: boolean;
   created_at: string;
 }
 
-const AVAILABLE_SUBJECTS = ['Maths', 'Science', 'English', 'Hindi', 'Social Science'];
 const AVAILABLE_CLASSES = ['6', '7', '8', '9', '10'];
+const AVAILABLE_LANGUAGES = ['hindi', 'english'];
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, role, loading: authLoading, signOut } = useAuth();
+  const { activeSubjects, getSubjectLabel } = useSubjects();
 
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Form state
@@ -50,6 +57,7 @@ export default function AdminDashboard() {
     password: '',
     subjects: [] as string[],
     classes: [] as string[],
+    languages: ['hindi', 'english'] as string[],
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -103,6 +111,7 @@ export default function AdminDashboard() {
           full_name: profile?.full_name || null,
           subjects: assignment.subjects || [],
           classes: assignment.classes || [],
+          languages: assignment.languages || ['hindi', 'english'],
           is_active: assignment.is_active,
           created_at: assignment.created_at,
         };
@@ -156,6 +165,15 @@ export default function AdminDashboard() {
     }));
   };
 
+  const handleLanguageToggle = (lang: string) => {
+    setNewTeacher(prev => ({
+      ...prev,
+      languages: prev.languages.includes(lang)
+        ? prev.languages.filter(l => l !== lang)
+        : [...prev.languages, lang],
+    }));
+  };
+
   const handleAddTeacher = async () => {
     if (!newTeacher.fullName || !newTeacher.email || !newTeacher.password) {
       toast({
@@ -184,10 +202,17 @@ export default function AdminDashboard() {
       return;
     }
 
+    if (newTeacher.languages.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select at least one language.',
+      });
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke('admin-create-teacher', {
         body: {
           email: newTeacher.email,
@@ -195,6 +220,7 @@ export default function AdminDashboard() {
           fullName: newTeacher.fullName,
           subjects: newTeacher.subjects,
           classes: newTeacher.classes,
+          languages: newTeacher.languages,
         },
       });
 
@@ -212,13 +238,7 @@ export default function AdminDashboard() {
       });
 
       // Reset form and close dialog
-      setNewTeacher({
-        fullName: '',
-        email: '',
-        password: '',
-        subjects: [],
-        classes: [],
-      });
+      resetNewTeacherForm();
       setIsAddDialogOpen(false);
       
       // Refresh teacher list
@@ -229,6 +249,85 @@ export default function AdminDashboard() {
         variant: 'destructive',
         title: 'Error',
         description: error.message || 'Failed to add teacher.',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetNewTeacherForm = () => {
+    setNewTeacher({
+      fullName: '',
+      email: '',
+      password: '',
+      subjects: [],
+      classes: [],
+      languages: ['hindi', 'english'],
+    });
+  };
+
+  const handleEditTeacher = (teacher: Teacher) => {
+    setEditingTeacher(teacher);
+    setNewTeacher({
+      fullName: teacher.full_name || '',
+      email: teacher.email,
+      password: '',
+      subjects: teacher.subjects,
+      classes: teacher.classes,
+      languages: teacher.languages,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateTeacher = async () => {
+    if (!editingTeacher) return;
+
+    if (newTeacher.subjects.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select at least one subject.',
+      });
+      return;
+    }
+
+    if (newTeacher.classes.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Please select at least one class.',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('teacher_assignments')
+        .update({
+          subjects: newTeacher.subjects,
+          classes: newTeacher.classes,
+          languages: newTeacher.languages,
+        })
+        .eq('teacher_id', editingTeacher.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Teacher allocation updated successfully.',
+      });
+
+      setIsEditDialogOpen(false);
+      setEditingTeacher(null);
+      resetNewTeacherForm();
+      fetchTeachers();
+    } catch (error: any) {
+      console.error('Error updating teacher:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update teacher.',
       });
     } finally {
       setSubmitting(false);
@@ -344,201 +443,331 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Manage Teachers Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Manage Teachers
-                </CardTitle>
-                <CardDescription>
-                  Add, view and manage teacher accounts
-                </CardDescription>
-              </div>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Teacher
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Add New Teacher</DialogTitle>
-                    <DialogDescription>
-                      Create a new teacher account with assigned subjects and classes.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        placeholder="Enter teacher's full name"
-                        value={newTeacher.fullName}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email *</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="teacher@shikshasetu.com"
-                        value={newTeacher.email}
-                        onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password *</Label>
-                      <div className="flex gap-2">
-                        <div className="relative flex-1">
+        {/* Tabs for Teachers and Subjects */}
+        <Tabs defaultValue="teachers" className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="teachers">Manage Teachers</TabsTrigger>
+            <TabsTrigger value="subjects">Manage Subjects</TabsTrigger>
+          </TabsList>
+
+          {/* Teachers Tab */}
+          <TabsContent value="teachers">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Manage Teachers
+                    </CardTitle>
+                    <CardDescription>
+                      Add, view and manage teacher accounts and their subject allocations
+                    </CardDescription>
+                  </div>
+                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="gap-2" onClick={resetNewTeacherForm}>
+                        <Plus className="h-4 w-4" />
+                        Add Teacher
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Add New Teacher</DialogTitle>
+                        <DialogDescription>
+                          Create a new teacher account with assigned subjects, classes, and languages.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fullName">Full Name *</Label>
                           <Input
-                            id="password"
-                            type={showPassword ? 'text' : 'password'}
-                            placeholder="Enter or generate password"
-                            value={newTeacher.password}
-                            onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                            id="fullName"
+                            placeholder="Enter teacher's full name"
+                            value={newTeacher.fullName}
+                            onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
                           />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-0 top-0 h-full"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
                         </div>
-                        <Button type="button" variant="outline" onClick={generatePassword}>
-                          Generate
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email *</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="teacher@shikshasetu.com"
+                            value={newTeacher.email}
+                            onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="password">Password *</Label>
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <Input
+                                id="password"
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Enter or generate password"
+                                value={newTeacher.password}
+                                onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-0 top-0 h-full"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                            <Button type="button" variant="outline" onClick={generatePassword}>
+                              Generate
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Subjects * (from active subjects)</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {activeSubjects.map((subject) => (
+                              <div key={subject.name} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`subject-${subject.name}`}
+                                  checked={newTeacher.subjects.includes(subject.name)}
+                                  onCheckedChange={() => handleSubjectToggle(subject.name)}
+                                />
+                                <Label htmlFor={`subject-${subject.name}`} className="text-sm font-normal cursor-pointer">
+                                  {subject.label_en}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                          {activeSubjects.length === 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              No subjects available. Add subjects in the "Manage Subjects" tab first.
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Classes *</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {AVAILABLE_CLASSES.map((cls) => (
+                              <div key={cls} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`class-${cls}`}
+                                  checked={newTeacher.classes.includes(cls)}
+                                  onCheckedChange={() => handleClassToggle(cls)}
+                                />
+                                <Label htmlFor={`class-${cls}`} className="text-sm font-normal cursor-pointer">
+                                  Class {cls}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Languages *</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {AVAILABLE_LANGUAGES.map((lang) => (
+                              <div key={lang} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`lang-${lang}`}
+                                  checked={newTeacher.languages.includes(lang)}
+                                  onCheckedChange={() => handleLanguageToggle(lang)}
+                                />
+                                <Label htmlFor={`lang-${lang}`} className="text-sm font-normal cursor-pointer capitalize">
+                                  {lang}
+                                </Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <Button
+                          onClick={handleAddTeacher}
+                          disabled={submitting}
+                          className="w-full"
+                        >
+                          {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                          Add Teacher
                         </Button>
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Subjects *</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {AVAILABLE_SUBJECTS.map((subject) => (
-                          <div key={subject} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`subject-${subject}`}
-                              checked={newTeacher.subjects.includes(subject)}
-                              onCheckedChange={() => handleSubjectToggle(subject)}
-                            />
-                            <Label htmlFor={`subject-${subject}`} className="text-sm font-normal cursor-pointer">
-                              {subject}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Classes *</Label>
-                      <div className="flex flex-wrap gap-2">
-                        {AVAILABLE_CLASSES.map((cls) => (
-                          <div key={cls} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`class-${cls}`}
-                              checked={newTeacher.classes.includes(cls)}
-                              onCheckedChange={() => handleClassToggle(cls)}
-                            />
-                            <Label htmlFor={`class-${cls}`} className="text-sm font-normal cursor-pointer">
-                              Class {cls}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    <Button
-                      onClick={handleAddTeacher}
-                      disabled={submitting}
-                      className="w-full"
-                    >
-                      {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                      Add Teacher
-                    </Button>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
                   </div>
-                </DialogContent>
-              </Dialog>
+                ) : teachers.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>No teachers added yet.</p>
+                    <p className="text-sm">Click "Add Teacher" to get started.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Subjects</TableHead>
+                          <TableHead>Classes</TableHead>
+                          <TableHead>Languages</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {teachers.map((teacher) => (
+                          <TableRow key={teacher.id}>
+                            <TableCell className="font-medium">
+                              {teacher.full_name || 'N/A'}
+                            </TableCell>
+                            <TableCell>{teacher.email}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {teacher.subjects.map((s) => (
+                                  <Badge key={s} variant="secondary" className="text-xs">
+                                    {getSubjectLabel(s, 'english')}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {teacher.classes.map((c) => (
+                                  <Badge key={c} variant="outline" className="text-xs">
+                                    {c}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {teacher.languages.map((l) => (
+                                  <Badge key={l} variant="outline" className="text-xs capitalize">
+                                    {l}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={teacher.is_active ? 'default' : 'secondary'}>
+                                {teacher.is_active ? 'Active' : 'Disabled'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditTeacher(teacher)}
+                                  title="Edit Allocation"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleToggleTeacherStatus(teacher.id, teacher.is_active)}
+                                >
+                                  {teacher.is_active ? (
+                                    <ToggleRight className="h-4 w-4 text-green-600" />
+                                  ) : (
+                                    <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Subjects Tab */}
+          <TabsContent value="subjects">
+            <SubjectManagement />
+          </TabsContent>
+        </Tabs>
+
+        {/* Edit Teacher Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Teacher Allocation</DialogTitle>
+              <DialogDescription>
+                Update subject, class, and language allocation for {editingTeacher?.full_name || editingTeacher?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Subjects *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {activeSubjects.map((subject) => (
+                    <div key={subject.name} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-subject-${subject.name}`}
+                        checked={newTeacher.subjects.includes(subject.name)}
+                        onCheckedChange={() => handleSubjectToggle(subject.name)}
+                      />
+                      <Label htmlFor={`edit-subject-${subject.name}`} className="text-sm font-normal cursor-pointer">
+                        {subject.label_en}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Classes *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_CLASSES.map((cls) => (
+                    <div key={cls} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-class-${cls}`}
+                        checked={newTeacher.classes.includes(cls)}
+                        onCheckedChange={() => handleClassToggle(cls)}
+                      />
+                      <Label htmlFor={`edit-class-${cls}`} className="text-sm font-normal cursor-pointer">
+                        Class {cls}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Languages *</Label>
+                <div className="flex flex-wrap gap-2">
+                  {AVAILABLE_LANGUAGES.map((lang) => (
+                    <div key={lang} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-lang-${lang}`}
+                        checked={newTeacher.languages.includes(lang)}
+                        onCheckedChange={() => handleLanguageToggle(lang)}
+                      />
+                      <Label htmlFor={`edit-lang-${lang}`} className="text-sm font-normal cursor-pointer capitalize">
+                        {lang}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Button
+                onClick={handleUpdateTeacher}
+                disabled={submitting}
+                className="w-full"
+              >
+                {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Update Allocation
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin" />
-              </div>
-            ) : teachers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No teachers added yet.</p>
-                <p className="text-sm">Click "Add Teacher" to get started.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Subjects</TableHead>
-                      <TableHead>Classes</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teachers.map((teacher) => (
-                      <TableRow key={teacher.id}>
-                        <TableCell className="font-medium">
-                          {teacher.full_name || 'N/A'}
-                        </TableCell>
-                        <TableCell>{teacher.email}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {teacher.subjects.map((s) => (
-                              <Badge key={s} variant="secondary" className="text-xs">
-                                {s}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {teacher.classes.map((c) => (
-                              <Badge key={c} variant="outline" className="text-xs">
-                                {c}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={teacher.is_active ? 'default' : 'secondary'}>
-                            {teacher.is_active ? 'Active' : 'Disabled'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleTeacherStatus(teacher.id, teacher.is_active)}
-                          >
-                            {teacher.is_active ? (
-                              <ToggleRight className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                            )}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );

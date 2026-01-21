@@ -64,6 +64,7 @@ export type Database = {
           id: string
           image_url: string | null
           language: Database["public"]["Enums"]["content_language"]
+          subject: string | null
           title: string
           updated_at: string
           url: string | null
@@ -79,6 +80,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           language?: Database["public"]["Enums"]["content_language"]
+          subject?: string | null
           title: string
           updated_at?: string
           url?: string | null
@@ -94,6 +96,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           language?: Database["public"]["Enums"]["content_language"]
+          subject?: string | null
           title?: string
           updated_at?: string
           url?: string | null
@@ -154,6 +157,7 @@ export type Database = {
           full_name: string | null
           id: string
           language: Database["public"]["Enums"]["content_language"] | null
+          selected_subjects: string[] | null
           updated_at: string
         }
         Insert: {
@@ -163,6 +167,7 @@ export type Database = {
           full_name?: string | null
           id: string
           language?: Database["public"]["Enums"]["content_language"] | null
+          selected_subjects?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -172,6 +177,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           language?: Database["public"]["Enums"]["content_language"] | null
+          selected_subjects?: string[] | null
           updated_at?: string
         }
         Relationships: []
@@ -256,6 +262,7 @@ export type Database = {
           language: Database["public"]["Enums"]["content_language"]
           options: Json
           question: string
+          subject: string | null
         }
         Insert: {
           class: string
@@ -266,6 +273,7 @@ export type Database = {
           language?: Database["public"]["Enums"]["content_language"]
           options?: Json
           question: string
+          subject?: string | null
         }
         Update: {
           class?: string
@@ -276,6 +284,37 @@ export type Database = {
           language?: Database["public"]["Enums"]["content_language"]
           options?: Json
           question?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      subjects: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          label_en: string
+          label_hi: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          label_en: string
+          label_hi: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          label_en?: string
+          label_hi?: string
+          name?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -286,6 +325,7 @@ export type Database = {
           created_by: string
           id: string
           is_active: boolean
+          languages: string[] | null
           subjects: string[]
           teacher_id: string
           updated_at: string
@@ -296,6 +336,7 @@ export type Database = {
           created_by: string
           id?: string
           is_active?: boolean
+          languages?: string[] | null
           subjects?: string[]
           teacher_id: string
           updated_at?: string
@@ -306,6 +347,7 @@ export type Database = {
           created_by?: string
           id?: string
           is_active?: boolean
+          languages?: string[] | null
           subjects?: string[]
           teacher_id?: string
           updated_at?: string

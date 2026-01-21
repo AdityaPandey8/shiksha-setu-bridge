@@ -2,13 +2,12 @@
  * StudentContent Page
  * 
  * Dedicated page for viewing learning content (videos, PDFs, notes).
- * Content is always accessible and reusable - no completion restrictions.
+ * Content is filtered based on student's selected subjects.
  * 
  * OFFLINE BEHAVIOR:
  * - Loads content from localStorage first (shiksha_setu_content)
  * - Silently syncs with backend when online
  * - Shows cached data without errors when offline
- * - Content remains accessible after multiple views
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -21,9 +20,13 @@ import { useLanguage } from '@/hooks/useLanguage';
 import { useAuth } from '@/hooks/useAuth';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { useOfflineStorage } from '@/hooks/useOfflineStorage';
+import { useStudentSubjects } from '@/hooks/useStudentSubjects';
+import { useSubjects } from '@/hooks/useSubjects';
 import { supabase } from '@/integrations/supabase/client';
 import { ContentCard } from '@/components/ContentCard';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { SubjectPromptBanner } from '@/components/SubjectPromptBanner';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContentItem {
@@ -34,6 +37,7 @@ interface ContentItem {
   content_type: 'video' | 'article' | 'pdf' | 'image';
   class: string;
   language: 'hindi' | 'english';
+  subject?: string | null;
   article_body?: string | null;
   image_url?: string | null;
   version?: number;
@@ -41,11 +45,13 @@ interface ContentItem {
 
 export default function StudentContent() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const { user, profile, loading: authLoading } = useAuth();
   const isOnline = useOnlineStatus();
   const { saveContent, getContent } = useOfflineStorage();
+  const { selectedSubjects, hasSelectedSubjects, loading: subjectsLoading } = useStudentSubjects();
+  const { getSubjectLabel } = useSubjects();
 
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,6 +59,7 @@ export default function StudentContent() {
   // Filters
   const [classFilter, setClassFilter] = useState<string>(profile?.class || 'all');
   const [languageFilter, setLanguageFilter] = useState<string>(profile?.language || 'all');
+  const [subjectFilter, setSubjectFilter] = useState<string>('all');
 
   // Redirect if not logged in
   useEffect(() => {
@@ -102,14 +109,24 @@ export default function StudentContent() {
     }
   }, [user, fetchData]);
 
-  // Filter content
+  // Filter content based on selected subjects
   const filteredContent = content.filter(item => {
+    // Subject filter - only show content matching student's selected subjects
+    if (hasSelectedSubjects && item.subject) {
+      const matchesSelectedSubjects = selectedSubjects.some(
+        s => s.toLowerCase() === item.subject?.toLowerCase()
+      );
+      if (!matchesSelectedSubjects) return false;
+    }
+    
+    // Additional subject filter from dropdown
+    if (subjectFilter !== 'all' && item.subject !== subjectFilter) return false;
     if (classFilter !== 'all' && item.class !== classFilter) return false;
     if (languageFilter !== 'all' && item.language !== languageFilter) return false;
     return true;
   });
 
-  if (authLoading || loading) {
+  if (authLoading || loading || subjectsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -124,29 +141,37 @@ export default function StudentContent() {
       {/* Header */}
       <header className="border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/student')}
-              className="shrink-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <FolderOpen className="h-5 w-5 text-green-600" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold">{t('hubContent')}</h1>
-                <p className="text-sm text-muted-foreground">{t('hubContentDesc')}</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/student')}
+                className="shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-green-500/10">
+                  <FolderOpen className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-bold">{t('hubContent')}</h1>
+                  <p className="text-sm text-muted-foreground">{t('hubContentDesc')}</p>
+                </div>
               </div>
             </div>
+            <ThemeToggle />
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-6">
+        {/* Subject Prompt Banner - shows if no subjects selected */}
+        {!hasSelectedSubjects && (
+          <SubjectPromptBanner onSubjectsSelected={fetchData} />
+        )}
+
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="pt-4">
@@ -155,6 +180,21 @@ export default function StudentContent() {
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">{t('filters')}:</span>
               </div>
+              {hasSelectedSubjects && (
+                <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue placeholder="Subject" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{language === 'hi' ? 'सभी विषय' : 'All Subjects'}</SelectItem>
+                    {selectedSubjects.map((subject) => (
+                      <SelectItem key={subject} value={subject}>
+                        {getSubjectLabel(subject, language === 'hi' ? 'hindi' : 'english')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <Select value={classFilter} onValueChange={setClassFilter}>
                 <SelectTrigger className="w-32">
                   <SelectValue placeholder={t('class')} />
@@ -187,7 +227,11 @@ export default function StudentContent() {
           <Card>
             <CardContent className="py-12 text-center">
               <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">{t('noContentAvailable')}</p>
+              <p className="text-muted-foreground">
+                {!hasSelectedSubjects 
+                  ? (language === 'hi' ? 'सामग्री देखने के लिए अपने विषय चुनें' : 'Select your subjects to see content')
+                  : t('noContentAvailable')}
+              </p>
             </CardContent>
           </Card>
         ) : (

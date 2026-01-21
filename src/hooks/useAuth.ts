@@ -13,6 +13,7 @@ interface AuthState {
     full_name: string | null;
     class: string | null;
     language: 'hindi' | 'english' | null;
+    avatar_url: string | null;
   } | null;
 }
 
@@ -81,7 +82,7 @@ export function useAuth() {
       // Fetch profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, class, language')
+        .select('full_name, class, language, avatar_url')
         .eq('id', userId)
         .maybeSingle();
 

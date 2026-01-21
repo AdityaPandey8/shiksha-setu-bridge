@@ -1,1 +1,4 @@
 project_id = "ihhnljxocosphlfhrcjh"
+
+[functions.admin-manage-teacher]
+verify_jwt = false

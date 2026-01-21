@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings, Pencil, GraduationCap, Trash2, Search } from 'lucide-react';
+import { Shield, Users, Plus, Loader2, ArrowLeft, Eye, EyeOff, BookOpen, ToggleLeft, ToggleRight, Settings, Pencil, GraduationCap, Trash2, Search, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -75,6 +75,13 @@ export default function AdminDashboard() {
     class: '',
     language: 'hindi' as 'hindi' | 'english',
   });
+
+  // Teacher delete/password reset
+  const [isResetPasswordDialogOpen, setIsResetPasswordDialogOpen] = useState(false);
+  const [resetPasswordTeacher, setResetPasswordTeacher] = useState<Teacher | null>(null);
+  const [newTeacherPassword, setNewTeacherPassword] = useState('');
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [deletingTeacherId, setDeletingTeacherId] = useState<string | null>(null);
 
   // Form state
   const [newTeacher, setNewTeacher] = useState({
@@ -533,6 +540,94 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteTeacher = async (teacherId: string) => {
+    setDeletingTeacherId(teacherId);
+    try {
+      const response = await supabase.functions.invoke('admin-manage-teacher', {
+        body: { action: 'delete', teacherId },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+
+      toast({
+        title: 'Success',
+        description: 'Teacher account deleted successfully.',
+      });
+
+      fetchTeachers();
+    } catch (error: any) {
+      console.error('Error deleting teacher:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to delete teacher.',
+      });
+    } finally {
+      setDeletingTeacherId(null);
+    }
+  };
+
+  const handleResetTeacherPassword = async () => {
+    if (!resetPasswordTeacher || !newTeacherPassword) return;
+
+    if (newTeacherPassword.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Password must be at least 6 characters.',
+      });
+      return;
+    }
+
+    setResettingPassword(true);
+    try {
+      const response = await supabase.functions.invoke('admin-manage-teacher', {
+        body: {
+          action: 'reset_password',
+          teacherId: resetPasswordTeacher.id,
+          newPassword: newTeacherPassword,
+        },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      if (response.data?.error) throw new Error(response.data.error);
+
+      toast({
+        title: 'Success',
+        description: `Password reset successfully for ${resetPasswordTeacher.full_name || resetPasswordTeacher.email}.`,
+      });
+
+      setIsResetPasswordDialogOpen(false);
+      setResetPasswordTeacher(null);
+      setNewTeacherPassword('');
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to reset password.',
+      });
+    } finally {
+      setResettingPassword(false);
+    }
+  };
+
+  const openResetPasswordDialog = (teacher: Teacher) => {
+    setResetPasswordTeacher(teacher);
+    setNewTeacherPassword('');
+    setIsResetPasswordDialogOpen(true);
+  };
+
+  const generateResetPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setNewTeacherPassword(password);
+  };
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
@@ -842,7 +937,16 @@ export default function AdminDashboard() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
+                                  onClick={() => openResetPasswordDialog(teacher)}
+                                  title="Reset Password"
+                                >
+                                  <KeyRound className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleToggleTeacherStatus(teacher.id, teacher.is_active)}
+                                  title={teacher.is_active ? 'Disable Teacher' : 'Enable Teacher'}
                                 >
                                   {teacher.is_active ? (
                                     <ToggleRight className="h-4 w-4 text-green-600" />
@@ -850,6 +954,41 @@ export default function AdminDashboard() {
                                     <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                                   )}
                                 </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-destructive hover:text-destructive"
+                                      title="Delete Teacher"
+                                      disabled={deletingTeacherId === teacher.id}
+                                    >
+                                      {deletingTeacherId === teacher.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Teacher Account</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Are you sure you want to delete <strong>{teacher.full_name || teacher.email}</strong>? 
+                                        This action cannot be undone and will permanently remove their account and all associated data.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => handleDeleteTeacher(teacher.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1129,6 +1268,56 @@ export default function AdminDashboard() {
               <Button onClick={handleUpdateStudent} disabled={submitting} className="w-full">
                 {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 Update Student
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Reset Teacher Password Dialog */}
+        <Dialog open={isResetPasswordDialogOpen} onOpenChange={setIsResetPasswordDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Reset Teacher Password</DialogTitle>
+              <DialogDescription>
+                Set a new password for {resetPasswordTeacher?.full_name || resetPasswordTeacher?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-teacher-password">New Password</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      id="new-teacher-password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={newTeacherPassword}
+                      onChange={(e) => setNewTeacherPassword(e.target.value)}
+                      placeholder="Enter new password"
+                      minLength={6}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
+                  <Button type="button" variant="outline" onClick={generateResetPassword}>
+                    Generate
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Password must be at least 6 characters</p>
+              </div>
+              <Button 
+                onClick={handleResetTeacherPassword} 
+                disabled={resettingPassword || !newTeacherPassword || newTeacherPassword.length < 6} 
+                className="w-full"
+              >
+                {resettingPassword && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Reset Password
               </Button>
             </div>
           </DialogContent>

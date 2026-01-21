@@ -199,18 +199,27 @@ export default function ProfileSettings() {
             </Card>
           )}
 
-          {/* Change Password */}
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" />{t('changePassword')}</CardTitle><CardDescription>{t('updateYourPassword')}</CardDescription></CardHeader>
-            <CardContent>
-              <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div className="space-y-2"><Label htmlFor="newPassword">{t('newPassword')}</Label><Input id="newPassword" type="password" placeholder={t('enterNewPassword')} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={6} /></div>
-                <div className="space-y-2"><Label htmlFor="confirmPassword">{t('confirmPassword')}</Label><Input id="confirmPassword" type="password" placeholder={t('confirmNewPassword')} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={6} /></div>
-                <p className="text-xs text-muted-foreground">{t('passwordRequirements')}</p>
-                <Button type="submit" disabled={savingPassword || !newPassword || !confirmPassword}>{savingPassword ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}{t('savePassword')}</Button>
-              </form>
-            </CardContent>
-          </Card>
+          {/* Change Password - Hidden for teachers */}
+          {role !== 'teacher' ? (
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" />{t('changePassword')}</CardTitle><CardDescription>{t('updateYourPassword')}</CardDescription></CardHeader>
+              <CardContent>
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                  <div className="space-y-2"><Label htmlFor="newPassword">{t('newPassword')}</Label><Input id="newPassword" type="password" placeholder={t('enterNewPassword')} value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={6} /></div>
+                  <div className="space-y-2"><Label htmlFor="confirmPassword">{t('confirmPassword')}</Label><Input id="confirmPassword" type="password" placeholder={t('confirmNewPassword')} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} minLength={6} /></div>
+                  <p className="text-xs text-muted-foreground">{t('passwordRequirements')}</p>
+                  <Button type="submit" disabled={savingPassword || !newPassword || !confirmPassword}>{savingPassword ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}{t('savePassword')}</Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Lock className="h-5 w-5" />{t('changePassword')}</CardTitle><CardDescription>Password management</CardDescription></CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">Your password is managed by the administrator. Please contact your admin if you need to reset your password.</p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Notifications */}
           <Card>

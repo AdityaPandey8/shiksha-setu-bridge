@@ -11,6 +11,7 @@ interface CreateTeacherRequest {
   fullName: string;
   subjects: string[];
   classes: string[];
+  languages?: string[];
 }
 
 Deno.serve(async (req) => {
@@ -67,7 +68,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body: CreateTeacherRequest = await req.json();
-    const { email, password, fullName, subjects, classes } = body;
+    const { email, password, fullName, subjects, classes, languages = ['hindi', 'english'] } = body;
 
     if (!email || !password || !fullName) {
       return new Response(
@@ -103,6 +104,7 @@ Deno.serve(async (req) => {
         teacher_id: newUser.user.id,
         subjects,
         classes,
+        languages,
         created_by: adminUser.id,
       });
 

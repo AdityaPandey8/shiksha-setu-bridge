@@ -9,7 +9,6 @@ import { useOfflineAuth } from '@/hooks/useOfflineAuth';
 import { MissionBanner } from '@/components/MissionBanner';
 import { OfflineModeBanner, ConnectionStatus } from '@/components/ConnectionStatus';
 import { StudentLearningHub } from '@/components/StudentLearningHub';
-import { OfflineChatbot } from '@/components/OfflineChatbot';
 import { DailyTip } from '@/components/DailyTip';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -180,9 +179,6 @@ export default function StudentDashboard() {
         {/* Learning Hub Navigation Cards */}
         <StudentLearningHub />
       </main>
-
-      {/* Floating Offline Chatbot */}
-      <OfflineChatbot />
     </div>
   );
 }

@@ -629,6 +629,18 @@ export default function TeacherDashboard() {
           </Card>
         </div>
 
+        {/* Allocation Warning */}
+        {!allocationLoading && allocation && allocation.subjects.length === 0 && (
+          <Alert className="mb-4 border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800 dark:text-amber-200">
+              {preferredLanguage === 'hi' 
+                ? 'आपके लिए कोई विषय आवंटित नहीं है। कंटेंट जोड़ने से पहले कृपया अपने एडमिन से संपर्क करें।'
+                : 'You have no subjects allocated yet. Please contact your admin to get assigned subjects, classes, and languages before adding content.'}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Tabs */}
         <Tabs defaultValue="content" className="space-y-6">
           <TabsList className="grid w-full grid-cols-5 max-w-2xl">
@@ -982,6 +994,31 @@ export default function TeacherDashboard() {
                             </div>
                           ))}
                         </div>
+                        {/* Subject Selection - Restricted to allocated subjects */}
+                        <div className="space-y-2">
+                          <Label>Subject *</Label>
+                          <Select value={quizSubject} onValueChange={setQuizSubject} required>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select subject" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {allocation?.subjects.length ? (
+                                allocation.subjects.map(subj => (
+                                  <SelectItem key={subj} value={subj}>
+                                    {getSubjectLabel(subj, preferredLanguage === 'hi' ? 'hindi' : 'english')}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="" disabled>No subjects allocated</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {allocation && allocation.subjects.length === 0 && (
+                            <p className="text-xs text-destructive">
+                              You have no subjects allocated. Contact Admin.
+                            </p>
+                          )}
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <Label>{t('class')}</Label>
@@ -990,11 +1027,9 @@ export default function TeacherDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="6">{t('class6')}</SelectItem>
-                                <SelectItem value="7">{t('class7')}</SelectItem>
-                                <SelectItem value="8">{t('class8')}</SelectItem>
-                                <SelectItem value="9">{t('class9')}</SelectItem>
-                                <SelectItem value="10">{t('class10')}</SelectItem>
+                                {(allocation?.classes.length ? allocation.classes : ['6', '7', '8', '9', '10']).map(cls => (
+                                  <SelectItem key={cls} value={cls}>{t('class')} {cls}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1005,13 +1040,14 @@ export default function TeacherDashboard() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="hindi">{t('hindi')}</SelectItem>
-                                <SelectItem value="english">{t('english')}</SelectItem>
+                                {(allocation?.languages.length ? allocation.languages : ['hindi', 'english']).map(lang => (
+                                  <SelectItem key={lang} value={lang}>{lang === 'hindi' ? t('hindi') : t('english')}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
                         </div>
-                        <Button type="submit" className="w-full" disabled={submittingQuiz}>
+                        <Button type="submit" className="w-full" disabled={submittingQuiz || (allocation?.subjects.length === 0)}>
                           {submittingQuiz && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                           {submittingQuiz ? t('adding') : t('addQuiz')}
                         </Button>

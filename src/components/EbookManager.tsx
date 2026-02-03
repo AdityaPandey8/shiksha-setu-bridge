@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, BookOpen, ChevronDown, ChevronUp, Trash2, Edit, FileText, Loader2 } from 'lucide-react';
+import { Plus, BookOpen, ChevronDown, ChevronUp, Trash2, Edit, FileText, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useEbookStorage, Ebook, Chapter } from '@/hooks/useEbookStorage';
 import { useLanguage } from '@/hooks/useLanguage';
 import { useToast } from '@/hooks/use-toast';
+import { useTeacherAllocation } from '@/hooks/useTeacherAllocation';
+import { useSubjects } from '@/hooks/useSubjects';
 
 /**
  * EbookManager Component
@@ -26,8 +29,10 @@ import { useToast } from '@/hooks/use-toast';
  * - Offline-first data storage
  */
 export function EbookManager() {
-  const { t } = useLanguage();
+  const { t, language: preferredLanguage } = useLanguage();
   const { toast } = useToast();
+  const { allocation, loading: allocationLoading } = useTeacherAllocation();
+  const { getSubjectLabel } = useSubjects();
   const {
     ebooks,
     addEbook,
@@ -43,6 +48,7 @@ export function EbookManager() {
   const [editingEbook, setEditingEbook] = useState<Ebook | null>(null);
   const [ebookTitle, setEbookTitle] = useState('');
   const [ebookDescription, setEbookDescription] = useState('');
+  const [ebookSubject, setEbookSubject] = useState('');
   const [ebookClass, setEbookClass] = useState('6');
   const [ebookLanguage, setEbookLanguage] = useState<'hindi' | 'english'>('english');
   const [ebookOfflineEnabled, setEbookOfflineEnabled] = useState(true);
@@ -63,8 +69,9 @@ export function EbookManager() {
   const resetEbookForm = () => {
     setEbookTitle('');
     setEbookDescription('');
-    setEbookClass('6');
-    setEbookLanguage('english');
+    setEbookSubject(allocation?.subjects[0] || '');
+    setEbookClass(allocation?.classes[0] || '6');
+    setEbookLanguage((allocation?.languages[0] as 'hindi' | 'english') || 'english');
     setEbookOfflineEnabled(true);
     setEditingEbook(null);
   };
@@ -107,6 +114,17 @@ export function EbookManager() {
 
   const handleSubmitEbook = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate against teacher allocation
+    if (allocation && !allocation.subjects.includes(ebookSubject)) {
+      toast({
+        variant: 'destructive',
+        title: 'Unauthorized Subject',
+        description: 'You are not allocated to create ebooks for this subject.',
+      });
+      return;
+    }
+    
     setSubmittingEbook(true);
 
     try {
@@ -271,6 +289,31 @@ export function EbookManager() {
                     placeholder={t('enterDescription')}
                   />
                 </div>
+                {/* Subject Selection - Restricted to allocated subjects */}
+                <div className="space-y-2">
+                  <Label>Subject *</Label>
+                  <Select value={ebookSubject} onValueChange={setEbookSubject} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allocation?.subjects.length ? (
+                        allocation.subjects.map(subj => (
+                          <SelectItem key={subj} value={subj}>
+                            {getSubjectLabel(subj, preferredLanguage === 'hi' ? 'hindi' : 'english')}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="" disabled>No subjects allocated</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {allocation && allocation.subjects.length === 0 && (
+                    <p className="text-xs text-destructive">
+                      You have no subjects allocated. Contact Admin.
+                    </p>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>{t('class')}</Label>
@@ -279,11 +322,9 @@ export function EbookManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="6">{t('class6')}</SelectItem>
-                        <SelectItem value="7">{t('class7')}</SelectItem>
-                        <SelectItem value="8">{t('class8')}</SelectItem>
-                        <SelectItem value="9">{t('class9')}</SelectItem>
-                        <SelectItem value="10">{t('class10')}</SelectItem>
+                        {(allocation?.classes.length ? allocation.classes : ['6', '7', '8', '9', '10']).map(cls => (
+                          <SelectItem key={cls} value={cls}>{t('class')} {cls}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -294,8 +335,9 @@ export function EbookManager() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="english">{t('english')}</SelectItem>
-                        <SelectItem value="hindi">{t('hindi')}</SelectItem>
+                        {(allocation?.languages.length ? allocation.languages : ['hindi', 'english']).map(lang => (
+                          <SelectItem key={lang} value={lang}>{lang === 'english' ? t('english') : t('hindi')}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -308,7 +350,7 @@ export function EbookManager() {
                     onCheckedChange={setEbookOfflineEnabled}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={submittingEbook}>
+                <Button type="submit" className="w-full" disabled={submittingEbook || (allocation?.subjects.length === 0)}>
                   {submittingEbook && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   {submittingEbook ? t('saving') : (editingEbook ? t('updateEbook') : t('addEbook'))}
                 </Button>

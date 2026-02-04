@@ -225,7 +225,7 @@ export function OfflineChatbot() {
     return (
       <Button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+        className="fixed bottom-4 left-4 z-50 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
         size="icon"
       >
         <MessageCircle className="h-6 w-6" />
@@ -237,7 +237,7 @@ export function OfflineChatbot() {
     return (
       <Button
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
+        className="fixed bottom-4 left-4 z-50 h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90"
         size="icon"
       >
         <MessageCircle className="h-6 w-6" />
@@ -246,7 +246,7 @@ export function OfflineChatbot() {
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 z-50 w-80 sm:w-96 shadow-xl border-2">
+    <Card className="fixed bottom-4 left-4 z-50 w-80 sm:w-96 shadow-xl border-2">
       <CardHeader className="flex flex-row items-center justify-between py-3 px-4 border-b bg-muted/50">
         <div className="flex items-center gap-2">
           <Bot className="h-5 w-5 text-primary" />

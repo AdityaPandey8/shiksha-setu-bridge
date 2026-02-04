@@ -1,125 +1,131 @@
 
-# Floating Chatbot on All Student Pages & Fix Teacher Dashboard Issues
+# Fix Floating Chatbot & Study Tools Overlap + Preview Caching
 
-## Summary
-This plan addresses two main issues:
-1. Make the floating chatbot appear on **every student page** (not just dashboard)
-2. Fix "Add Learning Content" and "E-Book" functionality on Teacher Dashboard
+## Overview
+This plan addresses two issues:
+1. **Lovable preview not showing changes** - PWA service worker caching
+2. **Floating chatbot overlapping study tools** - Both buttons positioned at same corner
 
 ---
 
 ## Problem Analysis
 
-### Issue 1: Chatbot Only on Dashboard
-Currently, `OfflineChatbot` is rendered only in `StudentDashboard.tsx`. The `StudentLayout` component is empty (just renders `<Outlet />`), so the chatbot disappears when students navigate to E-Books, Content, Quizzes, etc.
+### Issue 1: Preview Caching
+The project uses `vite-plugin-pwa` with aggressive caching. The service worker caches assets and API responses, causing stale content in the preview while deployed versions show latest changes.
 
-### Issue 2: Teacher Content/E-Book Not Working
-The forms work correctly BUT require:
-- Teacher must have **subject allocation from Admin** (via Admin Dashboard > Manage Teachers > Edit)
-- If no allocation exists, the subject dropdown shows "No subjects allocated" and forms are blocked
-- This is by design but may confuse teachers who haven't been allocated
+### Issue 2: Button Overlap
+Currently both floating components use nearly identical positioning:
+- `OfflineChatbot`: `fixed bottom-4 right-4 z-50`
+- `StudyToolsFloating`: `fixed bottom-6 right-6 z-50`
+
+When viewing E-Books or Content with articles, both appear in the bottom-right corner, overlapping each other.
 
 ---
 
 ## Solution
 
-### Part 1: Floating Chatbot on All Student Pages
+### Part 1: Fix Preview Caching
 
-**File: `src/components/StudentLayout.tsx`**
+**Option A: Disable PWA in Development** (Recommended)
 
-Transform the layout to include the floating chatbot:
+Already implemented - `devOptions.enabled: false` in `vite.config.ts`. However, the service worker may still be cached in browser.
 
-```
-Before:
-export function StudentLayout() {
-  return <Outlet />;
-}
+**Fix for User:**
+- Clear browser site data: DevTools > Application > Storage > Clear site data
+- Or use incognito/private browsing mode
+- Or hard refresh: Ctrl+Shift+R / Cmd+Shift+R
 
-After:
-export function StudentLayout() {
-  return (
-    <>
-      <Outlet />
-      <OfflineChatbot />
-    </>
-  );
-}
-```
+### Part 2: Reposition Floating Buttons
 
-Then **remove** the `<OfflineChatbot />` from `StudentDashboard.tsx` to avoid duplicates.
+Move the `OfflineChatbot` to **bottom-left corner** so it doesn't overlap with `StudyToolsFloating`:
+
+**File: `src/components/OfflineChatbot.tsx`**
+
+| Current | New |
+|---------|-----|
+| `fixed bottom-4 right-4` | `fixed bottom-4 left-4` |
+
+This keeps both buttons visible:
+- **Bottom-left**: Chatbot (global on all student pages)
+- **Bottom-right**: Study Tools (only on content/ebook viewing pages)
 
 ---
 
-### Part 2: Fix Teacher Dashboard Issues
+## Implementation Details
 
-**2A. Improve Error Messaging**
+### File: `src/components/OfflineChatbot.tsx`
 
-Add a clear alert banner when teacher has no allocation, explaining what to do:
-
+**Change 1: Floating button (closed state) - Line 226-233**
 ```tsx
-{!allocationLoading && allocation?.subjects.length === 0 && (
-  <Alert className="mb-4 border-amber-500/50 bg-amber-50">
-    <AlertTriangle className="h-4 w-4 text-amber-600" />
-    <AlertDescription>
-      You have no subjects allocated yet. Please contact your admin 
-      to get assigned subjects, classes, and languages before adding content.
-    </AlertDescription>
-  </Alert>
-)}
+// Before:
+className="fixed bottom-4 right-4 z-50 ..."
+
+// After:
+className="fixed bottom-4 left-4 z-50 ..."
 ```
 
-**2B. Fix Quiz Form Subject Dropdown**
-
-The quiz form is missing subject restriction. Add subject dropdown to quiz form (similar to content form):
-
+**Change 2: Minimized button - Line 238-245**
 ```tsx
-// Add subject state: quizSubject
-// Add subject dropdown in quiz form
-// Add validation in handleAddQuiz
+// Before:
+className="fixed bottom-4 right-4 z-50 ..."
+
+// After:
+className="fixed bottom-4 left-4 z-50 ..."
 ```
 
-**2C. Fix EbookManager (Interactive E-Books)**
+**Change 3: Chat card (open state) - Line 249**
+```tsx
+// Before:
+<Card className="fixed bottom-4 right-4 z-50 ..."
 
-The `EbookManager` component doesn't have teacher allocation restrictions. This allows teachers to create ebooks for any subject. Add allocation restrictions.
+// After:
+<Card className="fixed bottom-4 left-4 z-50 ..."
+```
+
+---
+
+## Visual Layout After Fix
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Content Area                         │
+│                                                         │
+│                                                         │
+│                                                         │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  [💬]                                            [+]   │
+│  Chatbot                                     Study      │
+│  (left)                                     Tools       │
+│                                             (right)     │
+└─────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Files to Modify
 
-| File | Change |
-|------|--------|
-| `src/components/StudentLayout.tsx` | Add `OfflineChatbot` component for all student pages |
-| `src/pages/StudentDashboard.tsx` | Remove duplicate `<OfflineChatbot />` |
-| `src/pages/TeacherDashboard.tsx` | Add allocation warning alert, fix quiz form subject dropdown |
-| `src/components/EbookManager.tsx` | Add teacher allocation restrictions |
-
----
-
-## Technical Implementation Details
-
-### StudentLayout.tsx Changes
-- Import `OfflineChatbot` component
-- Wrap `Outlet` with Fragment and add `OfflineChatbot` at the end
-- This ensures chatbot appears on all nested routes: /student/ebooks, /student/content, /student/quizzes, etc.
-
-### TeacherDashboard.tsx Changes
-1. Add allocation warning alert before the Tabs component
-2. The quiz form currently uses hardcoded class dropdown (6-10) - change to use `allocation?.classes`
-3. Add subject dropdown to quiz form (similar to content form)
-4. Add validation in `handleAddQuiz` to check subject against allocation
-
-### EbookManager.tsx Changes
-1. Import `useTeacherAllocation` and `useSubjects` hooks
-2. Add subject dropdown restricted to allocated subjects
-3. Add validation before save
+| File | Changes |
+|------|---------|
+| `src/components/OfflineChatbot.tsx` | Move all `right-4` to `left-4` (3 locations) |
 
 ---
 
 ## Expected Behavior After Fix
 
-1. **Students**: Floating chatbot button (bottom-right) visible on ALL pages - Dashboard, E-Books, Content, Quizzes, Career, Study Tools
-2. **Teachers**: 
-   - Clear warning if no allocation exists
-   - Subject dropdowns only show allocated subjects
-   - Forms work immediately when teacher has proper allocation
-3. **Admins**: No changes needed
+1. **Chatbot button**: Always visible bottom-left on all student pages
+2. **Study tools button**: Bottom-right only when viewing E-Books or article content
+3. **No overlap**: Both buttons fully visible and accessible
+4. **Mobile friendly**: Proper spacing on small screens
+
+---
+
+## Cache Clearing Instructions for User
+
+To see latest changes in Lovable preview:
+1. Open browser DevTools (F12)
+2. Go to Application tab
+3. Click "Storage" in left panel
+4. Click "Clear site data" button
+5. Refresh the page
